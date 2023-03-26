@@ -114,7 +114,7 @@ class AuthRequestHandler : public HTTPRequestHandler {
 
         void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
             try {
-                if (hasSubstr(request.getURI(), "/in") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
+                if (hasSubstr(request.getURI(), "/sign/in") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
                     HTMLForm form(request, request.stream());
                     std::string scheme;
                     std::string info;
@@ -130,11 +130,13 @@ class AuthRequestHandler : public HTTPRequestHandler {
                         // todo token generation
                         std::cout << "id " << id << std::endl;
                         if (id > 0) {
-                            response.setStatus(Poco::Net::HTTPResponse::HTTP_CREATED);
+                            response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                             response.setChunkedTransferEncoding(true);
                             response.setContentType("application/json");
+                            Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
+                            root->set("token", generate_token(login));
                             std::ostream &ostr = response.send();
-                            ostr << "{ \"id\" : \"" << id << "\"}" << std::endl;
+                            Poco::JSON::Stringifier::stringify(root, ostr);
                             return;
                         } else if (id == 0) {
                             response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
@@ -150,7 +152,7 @@ class AuthRequestHandler : public HTTPRequestHandler {
                             Poco::JSON::Stringifier::stringify(root, ostr);
                         }
                     }
-                } else if (hasSubstr(request.getURI(), "/up") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {
+                } else if (hasSubstr(request.getURI(), "/sign/up") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {
                     std::istream &i = request.stream();
                     int len = request.getContentLength();
                     char* buffer = new char[len];
@@ -187,6 +189,38 @@ class AuthRequestHandler : public HTTPRequestHandler {
                     std::ostream &ostr = response.send();
                     Poco::JSON::Stringifier::stringify(root, ostr);
                     return;
+                } else if (hasSubstr(request.getURI(), "/validate") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
+                    const Poco::URI Uri(request.getURI());
+                    const Poco::URI::QueryParameters params = Uri.getQueryParameters();
+                    if (params.size() > 0) {
+                        std::string token;
+                        for(int i = 0; i < ((int)params.size()); i++) {
+                            if (params[i].first == "token") {
+                                token = params[i].second;
+                            }
+                        }
+                        std::string login = validate_token(token);
+                        if (login.length() > 0) {
+                            response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
+                            response.setChunkedTransferEncoding(true);
+                            response.setContentType("application/json");
+                            Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
+                            root->set("login", login);
+                            std::ostream &ostr = response.send();
+                            Poco::JSON::Stringifier::stringify(root, ostr);
+                            return;  
+                        }
+                    }
+                    response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
+                    response.setChunkedTransferEncoding(true);
+                    response.setContentType("application/json");
+                    Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
+                    root->set("type", "/errors/unauthorized");
+                    root->set("title", "Unauthorized");
+                    root->set("status", "401");
+                    root->set("instance", "/auth");
+                    std::ostream &ostr = response.send();
+                    Poco::JSON::Stringifier::stringify(root, ostr);
                 }
             } catch (...) { //todo
                 response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_INTERNAL_SERVER_ERROR);
@@ -213,7 +247,7 @@ class HTTPAuthRequestFactory : public HTTPRequestHandlerFactory {
         HTTPRequestHandler *createRequestHandler([[maybe_unused]] const HTTPServerRequest &request){
             std::cout << "request:" << request.getURI()<< std::endl;
 
-            if (request.getURI().rfind("/sign") == 0) {
+            if (request.getURI().rfind("/auth") == 0) {
                     return new AuthRequestHandler(_format);
                 }
             return 0;

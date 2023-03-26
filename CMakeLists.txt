@@ -56,6 +56,7 @@ target_link_libraries(${AUTH_SERVICE} PRIVATE
                              ${CMAKE_THREAD_LIBS_INIT} 
                              ${Poco_LIBRARIES}
                              "PocoData"
+                             "PocoJWT"
                              "PocoDataMySQL"
                              "mysqlclient"
                              ZLIB::ZLIB)
