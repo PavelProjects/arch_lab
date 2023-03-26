@@ -140,7 +140,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                     return "";
                 }
 
-                Poco::JSON::Object::Ptr object = parseResponseBody(response_body);
+                Poco::JSON::Object::Ptr object = parseJson(response_body);
                 if (object->has("login")) {
                     return object->getValue<std::string>("login");
                 }
@@ -165,23 +165,44 @@ class UserRequestHandler : public HTTPRequestHandler {
                 }
                 std::cout << "Authorized user " << login << std::endl;
 
+                // TODO bad code, need refactor
                 if (hasSubstr(request.getURI(), "/edit") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_PUT) {
                     std::string body = extractBody(request.stream(), request.getContentLength());
                     std::string validation_exception;
                     if (body.length() > 0) {
-                        database::User user = database::User::fromJson(body);
-                        // todo add user role check
-                        if (user.get_login() != login) {
-                            validation_exception = "Current user can't edit " + user.get_login();
-                        } else if (validate_user(user, validation_exception)) {
-                            user.save_to_db();
-                            response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                            response.setChunkedTransferEncoding(true);
-                            response.setContentType("application/json");
-                            std::ostream &ostr = response.send();
-                            ostr << user.get_id();
-                            return;
+                        Poco::JSON::Object::Ptr obj = parseJson(body);
+                        if (!obj->has("id")) {
+                            validation_exception = "Can't edit without user id!";
+                        } else {
+                            database::User user = database::User::get_by_id(obj->getValue<long>("id"));
+                            if (user.get_id() <= 0) {
+                                validation_exception = "Can't find user";
+                            } else if (user.get_login() != login) { // todo add user role check
+                                validation_exception = "Current user can't edit " + user.get_login();
+                            } else {
+                                bool canUpdate = true;
+                                if (obj->has("name")) {
+                                    std::string value = obj->getValue<std::string>("name");
+                                    canUpdate &= check_name(value, validation_exception);
+                                    user.name() = obj->getValue<std::string>("name");
+                                }
+                                if (obj->has("email")) {
+                                    std::string value = obj->getValue<std::string>("email");
+                                    canUpdate &= check_email(value, validation_exception);
+                                    user.email() = obj->getValue<std::string>("email");
+                                }
+                                if (canUpdate) {
+                                    user.save_to_db();
+                                    response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                                    response.setChunkedTransferEncoding(true);
+                                    response.setContentType("application/json");
+                                    std::ostream &ostr = response.send();
+                                    ostr << user.get_id();
+                                    return;
+                                }
+                            }
                         }
+                        
                     } else {
                         validation_exception = "Body is missing!";
                     }

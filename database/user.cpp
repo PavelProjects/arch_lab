@@ -42,18 +42,18 @@ namespace database {
         return 0;
     }
 
-    User User::get_by_login(std::string &login) {
+    User User::get_by_id(long id) {
         try {
             Poco::Data::Session session = database::Database::get().create_session();
             Poco::Data::Statement select(session);
             User user;
 
-            select << "select id, login, email, name from "  << TABLE_NAME << " where login = ?",
+            select << "select id, login, email, name from "  << TABLE_NAME << " where id = ?",
                 into(user._id),
                 into(user._login),
                 into(user._email),
                 into(user._name),
-                use(login),
+                use(id),
                 range(0, 1);
         
             select.execute();

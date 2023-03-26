@@ -77,7 +77,7 @@ void serverExceptionResponse(HTTPServerResponse &response, const std::exception 
     Poco::JSON::Stringifier::stringify(root, ostr);
 }
 
-Poco::JSON::Object::Ptr parseResponseBody(std::string response_body) {
+Poco::JSON::Object::Ptr parseJson(std::string response_body) {
     Poco::JSON::Parser parser;
     Poco::Dynamic::Var result = parser.parse(response_body);
     return result.extract<Poco::JSON::Object::Ptr>();

@@ -4,7 +4,7 @@
 
 bool check_name(const std::string &name, std::string &reason) {
     if (name.length() < 3) {
-        reason = "Name must be at least 3 signs;";
+        reason += "Name must be at least 3 signs;";
         return false;
     }
 
@@ -12,22 +12,23 @@ bool check_name(const std::string &name, std::string &reason) {
 };
 
 bool check_email(const std::string &email, std::string &reason) {
+    bool res = true;
     if (email.find('@') == std::string::npos) {
-        reason = "Email must contain @;";
-        return false;
+        reason += "Email must contain @;";
+        res = false;
     }
 
     if (email.find(' ') != std::string::npos) {
-        reason = "EMail can't contain spaces;";
-        return false;
+        reason += "EMail can't contain spaces;";
+        res = false;
     }
 
     if (email.find('\t') != std::string::npos) {
         reason = "EMail can't contain spaces;";
-        return false;
+        res = false;
     }
 
-    return true;
+    return res;
 };
 
 

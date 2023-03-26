@@ -38,7 +38,7 @@ namespace database {
             std::string &password();
 
             static long auth(std::string &login, std::string &password);
-            static User get_by_login(std::string &login);
+            static User get_by_id(long id);
             static std::vector<User> search(User likeUser);
             void save_to_db();
     };
