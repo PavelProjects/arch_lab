@@ -2,40 +2,9 @@
 #include "Poco/Net/HTMLForm.h"
 #include "../database/user.h"
 
-bool have_all_user_fields(HTMLForm &form, std::string &missing) {
-    bool result = true;
-    if (!form.has("login")) {
-        missing += "login;"; 
-        result = false;
-    }
-    if (!form.has("password")) {
-        missing += "password;"; 
-        result = false;
-    }
-    if (!form.has("email")) {
-        missing += "email;"; 
-        result = false;
-    }
-    if (!form.has("name")) {
-        missing += "name; are missing"; 
-        result = false;
-    }
-    return result;
-};
-
 bool check_name(const std::string &name, std::string &reason) {
     if (name.length() < 3) {
         reason = "Name must be at least 3 signs;";
-        return false;
-    }
-
-    if (name.find(' ') != std::string::npos) {
-        reason = "Name can't contain spaces;";
-        return false;
-    }
-
-    if (name.find('\t') != std::string::npos) {
-        reason = "Name can't contain spaces;";
         return false;
     }
 

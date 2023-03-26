@@ -94,19 +94,7 @@ using Poco::Util::ServerApplication;
 #include "../utils/token_utils.h"
 #include "../utils/validation_utils.h"
 #include "../database/user.h"
-
-static bool hasSubstr(const std::string &str, const std::string &substr) {
-    if (str.size() < substr.size())
-        return false;
-    for (size_t i = 0; i <= str.size() - substr.size(); ++i) {
-        bool ok{true};
-        for (size_t j = 0; ok && (j < substr.size()); ++j)
-            ok = (str[i + j] == substr[j]);
-        if (ok)
-            return true;
-    }
-    return false;
-}
+#include "../utils/request_utils.h"
 
 class AuthRequestHandler : public HTTPRequestHandler {
     public:
@@ -127,8 +115,8 @@ class AuthRequestHandler : public HTTPRequestHandler {
 
                     if (scheme == "Basic" && decode_info(info, login, password)) {
                         long id = database::User::auth(login, password);
-                        std::cout << "id " << id << std::endl;
                         if (id > 0) {
+                            std::cout << "Found user with id " << id << std::endl;
                             response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                             response.setChunkedTransferEncoding(true);
                             response.setContentType("application/json");
@@ -138,25 +126,12 @@ class AuthRequestHandler : public HTTPRequestHandler {
                             Poco::JSON::Stringifier::stringify(root, ostr);
                             return;
                         } else if (id == 0) {
-                            response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
-                            response.setChunkedTransferEncoding(true);
-                            response.setContentType("application/json");
-                            Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                            root->set("type", "/errors/unauthorized");
-                            root->set("title", "Unauthorized");
-                            root->set("status", "401");
-                            root->set("detail", "invalid login or password");
-                            root->set("instance", "/auth");
-                            std::ostream &ostr = response.send();
-                            Poco::JSON::Stringifier::stringify(root, ostr);
+                            unauthorizedResponse(response);
                         }
                     }
+                    return;
                 } else if (hasSubstr(request.getURI(), "/sign/up") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {
-                    std::istream &i = request.stream();
-                    int len = request.getContentLength();
-                    char* buffer = new char[len];
-                    i.read(buffer, len);
-                    std::string body = buffer;
+                    std::string body = extractBody(request.stream(), request.getContentLength());
 
                     std::string validation_exception;
                     if (body.length() != 0) {
@@ -175,32 +150,19 @@ class AuthRequestHandler : public HTTPRequestHandler {
                     } else {
                         validation_exception = "Body is missing";
                     }
-
-                    response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
-                    Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                    root->set("type", "/errors/validation");
-                    root->set("title", "Validation exception");
-                    root->set("message", validation_exception);
-                    root->set("status", "500");
-                    root->set("instance", "/auth");
-                    std::ostream &ostr = response.send();
-                    Poco::JSON::Stringifier::stringify(root, ostr);
+                    badRequestResponse(response, validation_exception);
                     return;
                 } else if (hasSubstr(request.getURI(), "/validate") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
-                    const Poco::URI Uri(request.getURI());
-                    const Poco::URI::QueryParameters params = Uri.getQueryParameters();
-                    if (params.size() > 0) {
-                        std::string token;
-                        for(int i = 0; i < ((int)params.size()); i++) {
-                            if (params[i].first == "token") {
-                                token = params[i].second;
-                            }
-                        }
+                    std::string scheme;
+                    std::string token;
+
+                    request.getCredentials(scheme, token);
+
+                    std::cout << "Scheme/token: " << scheme << "/" << token << std::endl;
+                    if (scheme == "Bearer") {
                         std::string login = validate_token(token);
                         if (login.length() > 0) {
-                            response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
+                            response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_ACCEPTED);
                             response.setChunkedTransferEncoding(true);
                             response.setContentType("application/json");
                             Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
@@ -210,30 +172,14 @@ class AuthRequestHandler : public HTTPRequestHandler {
                             return;  
                         }
                     }
-                    response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
-                    Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                    root->set("type", "/errors/unauthorized");
-                    root->set("title", "Unauthorized");
-                    root->set("status", "401");
-                    root->set("instance", "/auth");
-                    std::ostream &ostr = response.send();
-                    Poco::JSON::Stringifier::stringify(root, ostr);
+                    unauthorizedResponse(response);
+                    return;
                 }
-            } catch (...) { //todo
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_INTERNAL_SERVER_ERROR);
-                response.setChunkedTransferEncoding(true);
-                response.setContentType("application/json");
-                Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                root->set("type", "/errors/server_error");
-                root->set("title", "Internail server error");
-                root->set("status", "500");
-                root->set("instance", "/auth");
-                std::ostream &ostr = response.send();
-                Poco::JSON::Stringifier::stringify(root, ostr);
+                notFoundResponse(response);
+            } catch (const std::exception &ex) {
+                std::cout << "Server exception: " << ex.what() << std::endl;
+                serverExceptionResponse(response, ex);
             }
-            
         }
     private:
         std::string _format;
@@ -246,9 +192,10 @@ class HTTPAuthRequestFactory : public HTTPRequestHandlerFactory {
         HTTPRequestHandler *createRequestHandler([[maybe_unused]] const HTTPServerRequest &request){
             std::cout << "request:" << request.getURI()<< std::endl;
 
-            if (request.getURI().rfind("/auth") == 0) {
-                    return new AuthRequestHandler(_format);
-                }
+            if (request.getURI().rfind("/auth") == 0 || 
+                (request.getURI().rfind("http") == 0 && hasSubstr(request.getURI(), "/auth"))) {
+                return new AuthRequestHandler(_format);
+            }
             return 0;
         }
     private:
@@ -268,11 +215,17 @@ class HTTPAuthWebServer : public Poco::Util::ServerApplication {
             ServerApplication::uninitialize();
         }
         int main([[maybe_unused]] const std::vector<std::string> &args) {
+            char * portValue = std::getenv("AUTH_SERVICE_PORT");
+            if (strlen(portValue) == 0) {
+                std::cout << "Port value is missing" << std::endl;
+                return Application::EXIT_DATAERR;
+            }
+
             if (!_helpRequested) {
-                ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", 8081));
+                ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", atoi(portValue)));
                 HTTPServer srv(new HTTPAuthRequestFactory(DateTimeFormat::SORTABLE_FORMAT), svs, new HTTPServerParams);
                 srv.start();
-                std::cout << "auth server started" << std::endl;
+                std::cout << "auth server started on port " << portValue << std::endl;
                 waitForTerminationRequest();
                 srv.stop();
                 std::cout << "auth server stoped" << std::endl;

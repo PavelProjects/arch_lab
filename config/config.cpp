@@ -6,7 +6,6 @@ Config::Config() {
         _login = std::getenv("DB_LOGIN");
         _password = std::getenv("DB_PASSWORD");
         _database = std::getenv("DB_DATABASE");
-
 }
 
 Config &Config::get() {

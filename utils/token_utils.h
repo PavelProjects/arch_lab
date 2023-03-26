@@ -23,6 +23,13 @@ bool decode_info(const std::string info, std::string &login, std::string &passwo
     return true;
 }
 
+std::string getJWTKey() {
+    if (std::getenv("JWT_KEY") != nullptr) {
+        return std::getenv("JWT_KEY");
+    }
+    return "0123456789ABCDEF0123456789ABCDEF";
+}
+
 std::string generate_token(std::string &login) {
     Poco::JWT::Token token;
     token.setType("JWT");
@@ -30,7 +37,7 @@ std::string generate_token(std::string &login) {
     token.payload().set("login", login);
     token.setIssuedAt(Poco::Timestamp());
 
-    Poco::JWT::Signer signer("0123456789ABCDEF0123456789ABCDEF");
+    Poco::JWT::Signer signer(getJWTKey());
     return signer.sign(token, Poco::JWT::Signer::ALGO_HS256);
 }
 
@@ -39,7 +46,7 @@ std::string validate_token(std::string &jwt_token) {
         return "";
     }
 
-    Poco::JWT::Signer signer("0123456789ABCDEF0123456789ABCDEF");
+    Poco::JWT::Signer signer(getJWTKey());
     try {
         Poco::JWT::Token token = signer.verify(jwt_token);
         if (token.payload().has("login")) {

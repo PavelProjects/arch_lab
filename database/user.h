@@ -14,9 +14,16 @@ namespace database {
             std::string _email;
             std::string _password;
 
+            void insert_entity();
+            void update_entity();
         public:
             static User fromJson(const std::string &json);
-            Poco::JSON::Object::Ptr toJson() const;
+            Poco::JSON::Object::Ptr toJSON() const;
+            static User empty() {
+                User user;
+                user._id = -1;
+                return user;
+            }
 
             long get_id() const;
             const std::string &get_name() const;
@@ -31,6 +38,8 @@ namespace database {
             std::string &password();
 
             static long auth(std::string &login, std::string &password);
+            static User get_by_login(std::string &login);
+            static std::vector<User> search(User likeUser);
             void save_to_db();
     };
 }
