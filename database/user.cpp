@@ -85,7 +85,7 @@ namespace database {
         try {
             Poco::Data::Statement statement(session);
 
-            statement << "INSERT INTO _user (name, email, login, password) VALUES(?, ?, ?, ?)",
+            statement << "INSERT INTO " << TABLE_NAME << " (name, email, login, password) VALUES(?, ?, ?, ?)",
                 use(_name),
                 use(_email),
                 use(_login),

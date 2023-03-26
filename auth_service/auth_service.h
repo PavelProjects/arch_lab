@@ -190,7 +190,7 @@ class HTTPAuthRequestFactory : public HTTPRequestHandlerFactory {
     public:
         HTTPAuthRequestFactory(const std::string &format) : _format(format){}
         HTTPRequestHandler *createRequestHandler([[maybe_unused]] const HTTPServerRequest &request){
-            std::cout << "request:" << request.getURI()<< std::endl;
+            std::cout << "request [" << request.getMethod() << "] " << request.getURI()<< std::endl;
 
             if (request.getURI().rfind("/auth") == 0 || 
                 (request.getURI().rfind("http") == 0 && hasSubstr(request.getURI(), "/auth"))) {

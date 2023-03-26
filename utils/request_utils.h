@@ -6,6 +6,13 @@
 #include "Poco/JSON/Object.h"
 #include "Poco/Net/HTTPServerResponse.h"
 #include <Poco/JSON/Parser.h>
+#include "ctime"
+
+time_t parse_time(std::string time) {
+    struct tm tm;
+    strptime(time.c_str(), "%d-%m-%Y %H:%M:%S", &tm);
+    return mktime(&tm);
+}
 
 static bool hasSubstr(const std::string &str, const std::string &substr) {
     if (str.size() < substr.size())
@@ -81,6 +88,57 @@ Poco::JSON::Object::Ptr parseJson(std::string response_body) {
     Poco::JSON::Parser parser;
     Poco::Dynamic::Var result = parser.parse(response_body);
     return result.extract<Poco::JSON::Object::Ptr>();
+}
+
+std::string validateToken(std::string scheme, std::string token) {
+    if (scheme.length() == 0 || token.length() == 0) {
+        return "";
+    }
+
+    std::string host = "localhost";
+    std::string auth_port = "8081";
+    if (std::getenv("SERVICE_HOST") != nullptr)
+        host = std::getenv("SERVICE_HOST");
+    if (std::getenv("AUTH_SERVICE_PORT") != nullptr) {
+        auth_port = std::getenv("AUTH_SERVICE_PORT");
+    }   
+    std::string url = "http://" + host + ":" + auth_port + "/auth/validate";
+
+    try {
+        Poco::URI uri(url);
+        Poco::Net::HTTPClientSession session(uri.getHost(), uri.getPort());
+        Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, uri.toString());
+        request.setVersion(Poco::Net::HTTPMessage::HTTP_1_1);
+        request.setKeepAlive(true);
+        request.setCredentials(scheme, token);
+
+        session.sendRequest(request);
+
+        Poco::Net::HTTPResponse response;
+        std::istream &rs = session.receiveResponse(response);
+        std::string response_body;
+
+        while (rs) {
+            char c{};
+            rs.read(&c, 1);
+            if (rs)
+                response_body += c;
+        }
+
+        if (response.getStatus() != Poco::Net::HTTPResponse::HTTPStatus::HTTP_ACCEPTED) {
+            std::cout << "Failed to validate token [" << response.getStatus() << "] " << response_body << std::endl;
+            return "";
+        }
+
+        Poco::JSON::Object::Ptr object = parseJson(response_body);
+        if (object->has("login")) {
+            return object->getValue<std::string>("login");
+        }
+
+    } catch (Poco::Exception &ex) {
+        std::cout << "Failed to validate token " << ex.what() << " :: " << ex.message() << std::endl;
+    }
+    return "";
 }
 
 #endif

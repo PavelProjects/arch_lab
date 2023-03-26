@@ -1,8 +1,6 @@
 #ifndef USER_SERVICE_H
 #define USER_SERVICE_H
 
-
-
 #include "Poco/Net/HTTPServer.h"
 #include "Poco/Net/HTTPRequestHandler.h"
 #include "Poco/Net/HTTPRequestHandlerFactory.h"
@@ -100,56 +98,6 @@ using Poco::Util::ServerApplication;
 class UserRequestHandler : public HTTPRequestHandler {
     public:
         UserRequestHandler(const std::string &format): _format(format){};
-        std::string validateToken(std::string scheme, std::string token) {
-            if (scheme.length() == 0 || token.length() == 0) {
-                return "";
-            }
-
-            std::string host = "localhost";
-            std::string auth_port = "8081";
-            if (std::getenv("SERVICE_HOST") != nullptr)
-                host = std::getenv("SERVICE_HOST");
-            if (std::getenv("AUTH_SERVICE_PORT") != nullptr) {
-                auth_port = std::getenv("AUTH_SERVICE_PORT");
-            }   
-            std::string url = "http://" + host + ":" + auth_port + "/auth/validate";
-
-            try {
-                Poco::URI uri(url);
-                Poco::Net::HTTPClientSession session(uri.getHost(), uri.getPort());
-                Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, uri.toString());
-                request.setVersion(Poco::Net::HTTPMessage::HTTP_1_1);
-                request.setKeepAlive(true);
-                request.setCredentials(scheme, token);
-
-                session.sendRequest(request);
-
-                Poco::Net::HTTPResponse response;
-                std::istream &rs = session.receiveResponse(response);
-                std::string response_body;
-
-                while (rs) {
-                    char c{};
-                    rs.read(&c, 1);
-                    if (rs)
-                        response_body += c;
-                }
-
-                if (response.getStatus() != Poco::Net::HTTPResponse::HTTPStatus::HTTP_ACCEPTED) {
-                    std::cout << "Failed to validate token [" << response.getStatus() << "] " << response_body << std::endl;
-                    return "";
-                }
-
-                Poco::JSON::Object::Ptr object = parseJson(response_body);
-                if (object->has("login")) {
-                    return object->getValue<std::string>("login");
-                }
-
-            } catch (Poco::Exception &ex) {
-                std::cout << "Failed to validate token " << ex.what() << " :: " << ex.message() << std::endl;
-            }
-            return "";
-        }
 
         void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
             try {
@@ -209,6 +157,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                     badRequestResponse(response, validation_exception);
                     return;
                 } else if (hasSubstr(request.getURI(), "/search") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
+                    // TODO add get by id
                     const Poco::URI uri(request.getURI());
                     const Poco::URI::QueryParameters params = uri.getQueryParameters();
                     database::User likeUser;
@@ -256,7 +205,7 @@ class HTTPUserRequestFactory : public HTTPRequestHandlerFactory {
     public:
         HTTPUserRequestFactory(const std::string &format) : _format(format){}
         HTTPRequestHandler *createRequestHandler([[maybe_unused]] const HTTPServerRequest &request){
-            std::cout << "request:" << request.getURI()<< std::endl;
+            std::cout << "request [" << request.getMethod() << "] " << request.getURI()<< std::endl;
 
             if (request.getURI().rfind("/user") == 0) {
                 return new UserRequestHandler(_format);
