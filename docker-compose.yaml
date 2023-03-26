@@ -9,9 +9,9 @@ services:
     restart: unless-stopped
     environment:
     # TODO переменные окружения в .env
-      MYSQL_DATABASE: archdb
-      MYSQL_USER: stud
-      MYSQL_PASSWORD: stud
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_LOGIN}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: '1'
     command: >
       --sql-mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
@@ -20,7 +20,7 @@ services:
     networks:
       - arch-network
     ports:
-      - 3360:3306
+      - ${DB_PORT}:3306
     healthcheck:
       test: "/usr/bin/mysql --user=stud --password=stud --execute \"SHOW DATABASES;\""
       timeout: 20s

@@ -1,0 +1,2 @@
+create table _user (id  INT NOT NULL AUTO_INCREMENT, login varchar(128) not null unique, password varchar(256) not null, name varchar(256) not null, email varchar(128) not null unique, PRIMARY KEY(id));
+insert into _user(login, password,  name, email) values ('autotest', '1', 'Test User', 'email@dot.com');

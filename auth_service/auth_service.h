@@ -127,7 +127,6 @@ class AuthRequestHandler : public HTTPRequestHandler {
 
                     if (scheme == "Basic" && decode_info(info, login, password)) {
                         long id = database::User::auth(login, password);
-                        // todo token generation
                         std::cout << "id " << id << std::endl;
                         if (id > 0) {
                             response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
