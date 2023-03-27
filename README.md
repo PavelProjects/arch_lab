@@ -16,3 +16,12 @@
 docker compose build
 docker compose up
 ```
+
+# Api
+Конфигурация ендпоинтов описана в ./docs/index.yaml.
+
+Для авторизации можно использовать тестовых пользователей:
+- autotest1 / 123
+- autotest2 / 123
+
+Или же создать своего.

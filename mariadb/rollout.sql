@@ -6,8 +6,8 @@ create table _user (
     email varchar(128) not null unique, 
     PRIMARY KEY(id)
 );
-insert into _user(login, password,  name, email) values ('autotest1', '1', 'Test User 1', 'email@dot1.com');
-insert into _user(login, password,  name, email) values ('autotest2', '1', 'Test User 2', 'email@dot2.com');
+insert into _user(login, password,  name, email) values ('autotest1', '123', 'Test User 1', 'email@dot1.com');
+insert into _user(login, password,  name, email) values ('autotest2', '123', 'Test User 2', 'email@dot2.com');
 
 create table _product (
     id INT NOT NULL AUTO_INCREMENT,
