@@ -162,9 +162,9 @@ class UserRequestHandler : public HTTPRequestHandler {
                     const Poco::URI::QueryParameters params = uri.getQueryParameters();
                     database::User likeUser;
 
-                    for(int i = 0; i < ((int) params.size()); i++) {
-                        std::string key = params[i].first;
-                        std::string value = params[i].second;
+                    for(std::pair<std::string, std::string> key_value: params) {
+                        std::string key = key_value.first;
+                        std::string value = key_value.second;
                         if (key == "login") {
                             likeUser.login() = value;
                         } else if (key == "name") {

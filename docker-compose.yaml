@@ -21,11 +21,37 @@ services:
     ports:
       - ${DB_PORT}:3306
     healthcheck:
-      test: "/usr/bin/mysql --user=${DB_LOGIN} --password=${DB_PASSWORD} --execute \"SHOW DATABASES;\""
-      timeout: 20s
+      test: "/usr/bin/mysql --database=${DB_DATABASE} --user=${DB_LOGIN} --password=${DB_PASSWORD} --execute \"SHOW DATABASES;\""
+      timeout: 10s
       retries: 5
     volumes:
       - db-node-01-data:/var/lib/mysql
+
+  auth_service:
+    build:
+      context: auth_service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    ports:
+      - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
+    networks:
+      - arch-network
+    depends_on:
+      db_node_01:
+        condition: service_healthy
+
+  user_service:
+    build:
+      context: user_service
+      dockerfile: Dockerfile
+    container_name: user_service
+    ports:
+      - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
+    networks:
+      - arch-network
+    depends_on:
+      db_node_01:
+        condition: service_healthy
 
 volumes:
   db-node-01-data:

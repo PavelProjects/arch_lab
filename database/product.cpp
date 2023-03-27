@@ -58,10 +58,7 @@ namespace database {
                 into(lot._description),
                 into(lot._cost),
                 into(lot._seller_id),
-                into(lot._creation_date),
-                range(0, 1);
-
-            // select.bind<time_t>();
+                into(lot._testDate);
 
             if (conditions.size() > 0) {
                 std::string cond_str;
@@ -216,7 +213,7 @@ namespace database {
         root->set("description", _description);
         root->set("cost", _cost);
         root->set("seller_id", _seller_id);
-        root->set("creation_date", _creation_date);
+        root->set("creation_date", _testDate);
 
         if (_seller.get_id() > 0) {
             root->set("seller", _seller.toJSON());

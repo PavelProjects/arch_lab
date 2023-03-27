@@ -27,6 +27,7 @@ namespace database {
             long _seller_id;
             User _seller = User::empty();
             time_t _creation_date;
+            Poco::DateTime _testDate;
 
             void insert_entity();
             void update_entity();

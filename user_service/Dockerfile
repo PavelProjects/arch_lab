@@ -5,5 +5,5 @@ RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata git sudo
 RUN git clone -b master https://github.com/pocoproject/poco.git && cd poco && mkdir cmake-build && cd cmake-build && cmake .. && make && sudo make install && cd .. && cd ..
 run git clone https://github.com/PavelProjects/arch_lab.git
 RUN sudo ldconfig
-RUN cd ./arch_lab && mkdir build && cd build && cmake  .. && make auth_service
-ENTRYPOINT [ "arch_lab/build/auth_service" ]
+RUN cd ./arch_lab && mkdir build && cd build && cmake  .. && make user_service
+ENTRYPOINT [ "arch_lab/build/user_service" ]
