@@ -19,11 +19,11 @@ services:
     networks:
       - arch-network
     ports:
-      - ${DB_PORT}:3306
-    healthcheck:
-      test: "/usr/bin/mysql --database=${DB_DATABASE} --user=${DB_LOGIN} --password=${DB_PASSWORD} --execute \"SHOW DATABASES;\""
-      timeout: 10s
-      retries: 5
+      - 3360:${DB_PORT}
+    # healthcheck:
+    #   test: "/usr/bin/mysql --database=${DB_DATABASE} --user=${DB_LOGIN} --password=${DB_PASSWORD} --execute \"SHOW DATABASES;\""
+    #   timeout: 10s
+    #   retries: 5
     volumes:
       - db-node-01-data:/var/lib/mysql
 
@@ -32,26 +32,42 @@ services:
       context: auth_service
       dockerfile: Dockerfile
     container_name: auth_service
+    environment:
+      DB_HOST: db_node_01
+      DB_PORT: ${DB_PORT}
+      DB_LOGIN: ${DB_LOGIN}
+      DB_PASSWORD: ${DB_LOGIN}
+      DB_DATABASE: ${DB_DATABASE}
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
     ports:
       - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
     networks:
       - arch-network
-    depends_on:
-      db_node_01:
-        condition: service_healthy
+    # depends_on:
+    #   db_node_01:
+    #     condition: service_healthy
 
   user_service:
     build:
       context: user_service
       dockerfile: Dockerfile
     container_name: user_service
+    environment:
+      DB_HOST: db_node_01
+      DB_PORT: ${DB_PORT}
+      DB_LOGIN: ${DB_LOGIN}
+      DB_PASSWORD: ${DB_LOGIN}
+      DB_DATABASE: ${DB_DATABASE}
+      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+      AUTH_SERVICE_HOST: auth_service
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
     ports:
       - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
     networks:
       - arch-network
-    depends_on:
-      db_node_01:
-        condition: service_healthy
+    # depends_on:
+    #   db_node_01:
+    #     condition: service_healthy
 
 volumes:
   db-node-01-data:

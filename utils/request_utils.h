@@ -97,8 +97,8 @@ std::string validateToken(std::string scheme, std::string token) {
 
     std::string host = "localhost";
     std::string auth_port = "8081";
-    if (std::getenv("SERVICE_HOST") != nullptr)
-        host = std::getenv("SERVICE_HOST");
+    if (std::getenv("AUTH_SERVICE_HOST") != nullptr)
+        host = std::getenv("AUTH_SERVICE_HOST");
     if (std::getenv("AUTH_SERVICE_PORT") != nullptr) {
         auth_port = std::getenv("AUTH_SERVICE_PORT");
     }   

@@ -215,7 +215,10 @@ class HTTPAuthWebServer : public Poco::Util::ServerApplication {
             ServerApplication::uninitialize();
         }
         int main([[maybe_unused]] const std::vector<std::string> &args) {
-            char * portValue = std::getenv("AUTH_SERVICE_PORT");
+            char * portValue = "8080";
+            if (std::getenv("AUTH_SERVICE_PORT") != nullptr) {
+                portValue = std::getenv("AUTH_SERVICE_PORT");
+            }
             if (strlen(portValue) == 0) {
                 std::cout << "Port value is missing" << std::endl;
                 return Application::EXIT_DATAERR;
