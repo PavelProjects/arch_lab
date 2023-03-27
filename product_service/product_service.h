@@ -194,7 +194,8 @@ class ProductRequesthandler: public HTTPRequestHandler {
                         } else {
                             database::Product product = database::Product::get_by_id(obj->getValue<long>("id"));
                             if (product.get_id() <= 0) {
-                                validation_exception = "Can't find product";
+                                std::cout << "Can't find product with id " << product.get_id() << std::endl;
+                                notFoundResponse(response);
                             } else {
                                 bool canUpdate = true;
                                 if (obj->has("name")) {
