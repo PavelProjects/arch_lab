@@ -21,7 +21,7 @@ using Poco::Data::Session;
 using Poco::Data::Statement;
 
 namespace database {
-    std::vector<Product> Product::search(ProductSearch lot_search) {
+    std::vector<Product> Product::search(std::vector<std::pair<std::string, std::string>> params) {
         try {
             Poco::Data::Session session = database::Database::get().create_session();
             Poco::Data::Statement select(session);
@@ -31,49 +31,63 @@ namespace database {
             User seller;
 
             std::vector<std::string> conditions;
+            bool addWhere = true;
 
-            if (lot_search.name.length() > 0) {
-                std::replace(lot_search.name.begin(), lot_search.name.end(), ' ', '%');
-                conditions.push_back("lower(name) like '%" + lot_search.name + "%'");
-            }
-            if (lot_search.seller_id > 0) {
-                conditions.push_back("seller_id = " + std::to_string(lot_search.seller_id));
-            }
-            if (lot_search.cost_min > -1) {
-                conditions.push_back("cost > " + std::to_string(lot_search.cost_min) + "'");
-            }
-            if (lot_search.cost_max > -1) {
-                conditions.push_back("cost < " + std::to_string(lot_search.cost_max) + "'");
-            }
-            if (lot_search.creation_date_start != time(0)) {
-                conditions.push_back("creation date > '" + std::to_string(lot_search.creation_date_start) + "'");
-            }
-            if (lot_search.creation_date_end != time(0)) {
-                conditions.push_back("creation date < '" + std::to_string(lot_search.creation_date_end) + "'");
-            }
-
-            select << "select id, name, description, cost, seller_id, creation_date from "  << TABLE_NAME,
+            select << "select p.id, p.name, p.description, p.cost, p.seller_id, p.creation_date, "
+                << "u.id, u.login, u.name, u.email from "  << TABLE_NAME
+                << " p inner join _user u on u.id = p.seller_id",
                 into(lot._id),
                 into(lot._name),
                 into(lot._description),
                 into(lot._cost),
                 into(lot._seller_id),
-                into(lot._testDate);
+                into(lot._creation_date),
+                into(lot._seller.id()),
+                into(lot._seller.login()),
+                into(lot._seller.name()),
+                into(lot._seller.email());
 
-            if (conditions.size() > 0) {
-                std::string cond_str;
-                for (std::string cond: conditions) {
-                    if (cond_str.length() == 0) {
-                        cond_str = " where ";
-                    } else {
-                        cond_str += " and ";
-                    }
+            
+            for(std::pair<std::string, std::string> key_value: params) {
+                std::string value = key_value.second;
 
-                    cond_str += cond;
+                if (addWhere) {
+                    select << " where ";
+                    addWhere = false;
+                } else {
+                    select << "and ";
                 }
-                std::cout << "Search condition: " << cond_str << std::endl;
-                
-                select << cond_str;
+
+                if (key_value.first == "id") {
+                    select << " id = ? ";
+                    select.bind(atoi(value.c_str()));
+                } else if (key_value.first == "cost_min") {
+                    select << "cost >= ? ";
+                    select.bind(atoi(value.c_str()));
+                } else if (key_value.first == "cost_max") {
+                    select << "cost <= ? ";
+                    select.bind(atoi(value.c_str()));
+                } else if (key_value.first == "seller_id") {
+                    select << "seller_id = ? ";
+                    select.bind(atoi(value.c_str()));
+                } else if (key_value.first == "name") {
+                    std::replace(value.begin(), value.end(), ' ', '%');
+                    select << "lower(name) like lower(?) ";
+                    select.bind("%" + value + "%");
+                    addWhere = false;
+                } else if (key_value.first == "creation_date_start") {
+                    int tzd;
+                    Poco::DateTime dateTime;
+                    Poco::DateTimeParser::parse(key_value.first, dateTime, tzd);
+                    select << "creation_date >= ? ";
+                    select.bind(dateTime);
+                } else if (key_value.first == "creation_date_end") {
+                    int tzd;
+                    Poco::DateTime dateTime;
+                    Poco::DateTimeParser::parse(key_value.first, dateTime, tzd);
+                    select << "creation_date <= ? ";
+                    select.bind(dateTime);
+                }
             }
         
             while (!select.done()){
@@ -97,12 +111,19 @@ namespace database {
             Poco::Data::Statement select(session);
             Product lot;
 
-            select << "select id, name, description, cost, seller_id from "  << TABLE_NAME << " where id = ?",
+            select << "select p.id, p.name, p.description, p.cost, p.seller_id, p.creation_date, "
+                << "u.id, u.login, u.name, u.email from "  << TABLE_NAME
+                << " p inner join _user u on u.id = p.seller_id where p.id = ?",
                 into(lot._id),
                 into(lot._name),
                 into(lot._description),
                 into(lot._cost),
                 into(lot._seller_id),
+                into(lot._creation_date),
+                into(lot._seller.id()),
+                into(lot._seller.login()),
+                into(lot._seller.name()),
+                into(lot._seller.email()),
                 use(id),
                 range(0, 1);
         
@@ -213,7 +234,7 @@ namespace database {
         root->set("description", _description);
         root->set("cost", _cost);
         root->set("seller_id", _seller_id);
-        root->set("creation_date", _testDate);
+        root->set("creation_date", _creation_date);
 
         if (_seller.get_id() > 0) {
             root->set("seller", _seller.toJSON());
@@ -299,11 +320,11 @@ namespace database {
         return _seller;
     }
 
-    const time_t &Product::get_creation_date() const {
+    const Poco::DateTime &Product::get_creation_date() const {
         return _creation_date;
     }
 
-    time_t &Product::creattion_date() {
+    Poco::DateTime &Product::creattion_date() {
         return _creation_date;
     }
 }

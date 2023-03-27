@@ -121,7 +121,7 @@ class AuthRequestHandler : public HTTPRequestHandler {
                             response.setChunkedTransferEncoding(true);
                             response.setContentType("application/json");
                             Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
-                            root->set("token", generate_token(login));
+                            root->set("token", generate_token(id, login));
                             std::ostream &ostr = response.send();
                             Poco::JSON::Stringifier::stringify(root, ostr);
                             return;
@@ -160,13 +160,15 @@ class AuthRequestHandler : public HTTPRequestHandler {
 
                     std::cout << "Scheme/token: " << scheme << "/" << token << std::endl;
                     if (scheme == "Bearer") {
-                        std::string login = validate_token(token);
-                        if (login.length() > 0) {
+                        std::string login;
+                        long id;
+                        if (validate_token(token, id, login)) {
                             response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_ACCEPTED);
                             response.setChunkedTransferEncoding(true);
                             response.setContentType("application/json");
                             Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                             root->set("login", login);
+                            root->set("id", id);
                             std::ostream &ostr = response.send();
                             Poco::JSON::Stringifier::stringify(root, ostr);
                             return;  

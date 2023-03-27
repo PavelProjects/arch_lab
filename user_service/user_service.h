@@ -105,8 +105,9 @@ class UserRequestHandler : public HTTPRequestHandler {
                 std::string token;
                 request.getCredentials(scheme, token);
 
-                std::string login = validateToken(scheme, token);
-                if (login.length() == 0) {
+                std::string login;
+                long id;
+                if (!validateToken(scheme, token, id, login)) {
                     std::cout << "Failed to authorize user" << std::endl;
                     unauthorizedResponse(response);
                     return;

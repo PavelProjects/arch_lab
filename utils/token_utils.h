@@ -30,30 +30,35 @@ std::string getJWTKey() {
     return "0123456789ABCDEF0123456789ABCDEF";
 }
 
-std::string generate_token(std::string &login) {
+std::string generate_token(long &id, std::string &login) {
     Poco::JWT::Token token;
     token.setType("JWT");
     token.setSubject("login");
     token.payload().set("login", login);
+    token.payload().set("id", id);
     token.setIssuedAt(Poco::Timestamp());
 
     Poco::JWT::Signer signer(getJWTKey());
     return signer.sign(token, Poco::JWT::Signer::ALGO_HS256);
 }
 
-std::string validate_token(std::string &jwt_token) {
+bool validate_token(std::string &jwt_token, long &id, std::string &login) {
     if (jwt_token.length() == 0) {
-        return "";
+        return false;
     }
 
     Poco::JWT::Signer signer(getJWTKey());
     try {
         Poco::JWT::Token token = signer.verify(jwt_token);
-        if (token.payload().has("login")) {
-            return token.payload().get("login");
+        if (token.payload().has("login") && token.payload().has("id")) {
+            login = token.payload().getValue<std::string>("login");
+            id = token.payload().getValue<long>("id");
+            return true;
         }
+        std::cout << "Not enough fields in token" << std::endl;
+
     } catch (...) {
         std::cout << "Token verification failed" << std::endl;
     }
-    return "";
+    return false;
 }

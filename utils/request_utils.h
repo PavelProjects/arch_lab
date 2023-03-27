@@ -8,12 +8,6 @@
 #include <Poco/JSON/Parser.h>
 #include "ctime"
 
-time_t parse_time(std::string time) {
-    struct tm tm;
-    strptime(time.c_str(), "%d-%m-%Y %H:%M:%S", &tm);
-    return mktime(&tm);
-}
-
 static bool hasSubstr(const std::string &str, const std::string &substr) {
     if (str.size() < substr.size())
         return false;
@@ -90,9 +84,9 @@ Poco::JSON::Object::Ptr parseJson(std::string response_body) {
     return result.extract<Poco::JSON::Object::Ptr>();
 }
 
-std::string validateToken(std::string scheme, std::string token) {
+bool validateToken(std::string scheme, std::string token, long &id, std::string &login) {
     if (scheme.length() == 0 || token.length() == 0) {
-        return "";
+        return false;
     }
 
     std::string host = "localhost";
@@ -131,14 +125,16 @@ std::string validateToken(std::string scheme, std::string token) {
         }
 
         Poco::JSON::Object::Ptr object = parseJson(response_body);
-        if (object->has("login")) {
-            return object->getValue<std::string>("login");
+        if (object->has("login") && object->has("id")) {
+            login = object->getValue<std::string>("login");
+            id = object->getValue<long>("id");
+            return true;
         }
-
+        std::cout << "Not enough fields in auth response" << std::endl;
     } catch (Poco::Exception &ex) {
         std::cout << "Failed to validate token " << ex.what() << " :: " << ex.message() << std::endl;
     }
-    return "";
+    return false;
 }
 
 #endif

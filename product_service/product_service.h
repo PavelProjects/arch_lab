@@ -31,6 +31,7 @@
 #include "Poco/Net/ServerSocket.h"
 #include "Poco/Timestamp.h"
 #include "Poco/DateTimeFormatter.h"
+#include "Poco/DateTimeParser.h"
 #include "Poco/DateTimeFormat.h"
 #include "Poco/Exception.h"
 #include "Poco/ThreadPool.h"
@@ -106,45 +107,28 @@ class ProductRequesthandler: public HTTPRequestHandler {
                 std::string token;
                 request.getCredentials(scheme, token);
 
-                std::string login = validateToken(scheme, token);
-                if (login.length() == 0) {
+                std::string login;
+                long id;
+                if (!validateToken(scheme, token, id, login)) {
                     std::cout << "Failed to authorize user" << std::endl;
                     unauthorizedResponse(response);
                     return;
                 }
                 std::cout << "Authorized user " << login << std::endl;
 
+                std::string validation_exception;
+
                 if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
                     const Poco::URI uri(request.getURI());
                     const Poco::URI::QueryParameters params = uri.getQueryParameters();
-                    database::ProductSearch search;
 
-                    for(std::pair<std::string, std::string> key_value: params) {
-                        // TODO REWORK BAD CODE!
-                        if (key_value.first == "id") {
-                            search.id = atoi(key_value.second.c_str());
-                        } else if (key_value.first == "cost_min") {
-                            search.cost_min = atoi(key_value.second.c_str());
-                        } else if (key_value.first == "cost_max") {
-                            search.cost_max = atoi(key_value.second.c_str());
-                        } else if (key_value.first == "seller_id") {
-                            search.seller_id = atoi(key_value.second.c_str());
-                        } else if (key_value.first == "name") {
-                            search.name = key_value.second;
-                        } else if (key_value.first == "creation_date_start") {
-                            search.creation_date_start = parse_time(key_value.second);
-                        } else if (key_value.first == "creation_date_end") {
-                            search.creation_date_end = parse_time(key_value.second);
-                        }
-                    }
-                    //todo add search by id
                     if (hasSubstr(request.getURI(), "/search")) {
-                        std::vector<database::Product> result = database::Product::search(search);
+                        std::vector<database::Product> result = database::Product::search(params);
                         std::cout << "Found total " << result.size() << std::endl;
                         Poco::JSON::Array arr;
-                        for (database::Product user: result) {
+                        for (database::Product product: result) {
                             // without toJson don't work, dunno why
-                            arr.add(user.toJSON());
+                            arr.add(product.toJSON());
                         }
                         response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                         response.setChunkedTransferEncoding(true);
@@ -154,14 +138,85 @@ class ProductRequesthandler: public HTTPRequestHandler {
                         return;
                     }
                 } else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {
-                    //todo create
+                    std::string body = extractBody(request.stream(), request.getContentLength());
+                    if (body.length() > 0) {
+                        std::cout << "Creation new product by " << login << std::endl;
+                        std::cout << body << std::endl;
+
+                        database::Product product = database::Product::fromJson(body);
+                        if (validate_product(product, validation_exception)) {
+                            database::User seller = database::User::get_by_id(id);
+                            if (seller.get_id() > 0) {
+                                product.seller_id() = seller.get_id();
+                                product.save_to_db();
+
+                                response.setStatus(Poco::Net::HTTPResponse::HTTP_CREATED);
+                                response.setChunkedTransferEncoding(true);
+                                response.setContentType("application/json");
+                                std::ostream &ostr = response.send();
+                                ostr << product.get_id();
+                                return;
+                            } else {
+                                validation_exception = "Can't find user by id " + std::to_string(id);
+                            }
+                        }
+                    } else {
+                        validation_exception = "Body is missing!";
+                    }
                 } else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_PUT) {
-                    //todo edit
+                    std::string body = extractBody(request.stream(), request.getContentLength());
+                    if (body.length() > 0) {
+                        Poco::JSON::Object::Ptr obj = parseJson(body);
+                        if (!obj->has("id")) {
+                            validation_exception = "Can't edit without user id!";
+                        } else {
+                            database::Product product = database::Product::get_by_id(obj->getValue<long>("id"));
+                            if (product.get_id() <= 0) {
+                                validation_exception = "Can't find product";
+                            } else {
+                                bool canUpdate = true;
+                                if (obj->has("name")) {
+                                    std::string value = obj->getValue<std::string>("name");
+                                    canUpdate &= check_name(value, validation_exception);
+                                    product.name() = obj->getValue<std::string>("name");
+                                }
+                                if (obj->has("description")) {
+                                    std::string value = obj->getValue<std::string>("description");
+                                    canUpdate &= check_email(value, validation_exception);
+                                    product.description() = obj->getValue<std::string>("description");
+                                }
+                                if (obj->has("cost")) {
+                                    if (obj->getValue<float>("cost") > 0) {
+                                        product.cost() = obj->getValue<float>("cost");
+                                    } else {
+                                        validation_exception += "cost can't be negative;";
+                                        canUpdate = false;
+                                    }
+                                }
+                                if (canUpdate) {
+                                    product.save_to_db();
+                                    response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                                    response.setChunkedTransferEncoding(true);
+                                    response.setContentType("application/json");
+                                    std::ostream &ostr = response.send();
+                                    ostr << product.get_id();
+                                    return;
+                                }
+                            }
+                        }
+                    } else {
+                        validation_exception = "Body is missing!";
+                    }
+                }
+
+                if (validation_exception.length() > 0) {
+                    badRequestResponse(response, validation_exception);
+                    return;
                 }
             
             } catch (std::exception &ex) {
-                serverExceptionResponse(response, ex);
                 std::cout << "Server exception: " << ex.what() << std::endl;
+                serverExceptionResponse(response, ex);
                 return;
             }
             notFoundResponse(response);
