@@ -25,3 +25,10 @@ insert into _product (name, description, cost, seller_id)
         100,
         u.id
     from _user as u where login = 'autotest1';
+insert into _product (name, description, cost, seller_id) 
+    select
+        "test product 2",
+        "test product 2",
+        500,
+        u.id
+    from _user as u where login = 'autotest2';

@@ -98,6 +98,28 @@ using Poco::Util::ServerApplication;
 #include "../utils/request_utils.h"
 #include "../utils/validation_utils.h"
 
+
+bool validate_product(database::Product &product, std::string &message) {
+    bool result = true;
+
+    if (product.get_name().length() < 3) {
+        result = false;
+        message += "name should be at least 3 signs;";
+    }
+
+    if (product.get_description().length() < 3) {
+        result = false;
+        message += "description should be at least 3 digits;";
+    }
+
+    if (product.get_cost() < 0) {
+        result = false;
+        message += "cast can't be negetive;";
+    }
+
+    return result;
+}
+
 class ProductRequesthandler: public HTTPRequestHandler {
     public:
         ProductRequesthandler(const std::string &format): _format(format){};
