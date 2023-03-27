@@ -42,10 +42,11 @@ namespace database {
                 into(lot._cost),
                 into(lot._seller_id),
                 into(lot._creation_date),
-                into(lot._seller.id()),
-                into(lot._seller.login()),
-                into(lot._seller.name()),
-                into(lot._seller.email());
+                into(seller.id()),
+                into(seller.login()),
+                into(seller.name()),
+                into(seller.email()),
+                range(0, 1);
 
             
             for(std::pair<std::string, std::string> key_value: params) {
@@ -59,20 +60,20 @@ namespace database {
                 }
 
                 if (key_value.first == "id") {
-                    select << " id = ? ";
+                    select << "p.id = ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "cost_min") {
-                    select << "cost >= ? ";
+                    select << "p.cost >= ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "cost_max") {
-                    select << "cost <= ? ";
+                    select << "p.cost <= ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "seller_id") {
-                    select << "seller_id = ? ";
+                    select << "p.seller_id = ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "name") {
                     std::replace(value.begin(), value.end(), ' ', '%');
-                    select << "lower(name) like lower(?) ";
+                    select << "p.lower(name) like lower(?) ";
                     select.bind("%" + value + "%");
                     addWhere = false;
                 } else if (key_value.first == "creation_date_start") {
@@ -89,10 +90,14 @@ namespace database {
                     select.bind(dateTime);
                 }
             }
+
+            std::cout << "SQL search: " << select.toString() << std::endl;
         
             while (!select.done()){
-                if (select.execute())
+                if (select.execute()){
+                    lot.seller() = seller;
                     result.push_back(lot);
+                }
             }
 
             return result;
@@ -262,7 +267,10 @@ namespace database {
         lot.description() = getOrDefault<std::string>(object, "name", "");
         lot.cost() = getOrDefault<float>(object, "cost", 0);
         lot.seller_id() = getOrDefault<long>(object, "seller_id", 0);
-        lot.creattion_date() = getOrDefault<time_t>(object, "creation_date", time(0));
+
+        if (object->has("creation_date")) {
+            lot.creattion_date() = object->getValue<Poco::DateTime>("creation_date");
+        }
 
         if (object->has("seller")) {
             std::string seller_json = object->getValue<std::string>("seller");
