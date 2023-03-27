@@ -198,7 +198,7 @@ class HTTPProductWebServer : public Poco::Util::ServerApplication {
             ServerApplication::uninitialize();
         }
         int main([[maybe_unused]] const std::vector<std::string> &args) {
-            char * portValue = "8080";
+            const char * portValue = "8080";
             if (std::getenv("PRODUCT_SERVICE_PORT") != nullptr) {
                 portValue = std::getenv("PRODUCT_SERVICE_PORT");
             }
