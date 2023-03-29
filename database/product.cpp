@@ -31,62 +31,53 @@ namespace database {
             User seller;
 
             std::vector<std::string> conditions;
-            bool addWhere = true;
 
             select << "select p.id, p.name, p.description, p.cost, p.seller_id, p.creation_date, "
-                << "u.id, u.login, u.name, u.email from "  << TABLE_NAME
-                << " p inner join _user u on u.id = p.seller_id",
+                << "u.id, u.login, u.name, u.email, u.deleted from "  << TABLE_NAME
+                << " p inner join _user u on u.id = p.seller_id where p.deleted = false",
                 into(lot._id),
                 into(lot._name),
                 into(lot._description),
                 into(lot._cost),
                 into(lot._seller_id),
                 into(lot._creation_date),
-                into(seller.id()),
-                into(seller.login()),
-                into(seller.name()),
-                into(seller.email()),
+                into(lot._seller.id()),
+                into(lot._seller.login()),
+                into(lot._seller.name()),
+                into(lot._seller.email()),
+                into(lot._seller.deleted()),
                 range(0, 1);
 
             
             for(std::pair<std::string, std::string> key_value: params) {
                 std::string value = key_value.second;
-
-                if (addWhere) {
-                    select << " where ";
-                    addWhere = false;
-                } else {
-                    select << "and ";
-                }
-
                 if (key_value.first == "id") {
-                    select << "p.id = ? ";
+                    select << "and p.id = ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "cost_min") {
-                    select << "p.cost >= ? ";
+                    select << "and p.cost >= ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "cost_max") {
-                    select << "p.cost <= ? ";
+                    select << "and p.cost <= ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "seller_id") {
-                    select << "p.seller_id = ? ";
+                    select << "and p.seller_id = ? ";
                     select.bind(atoi(value.c_str()));
                 } else if (key_value.first == "name") {
                     std::replace(value.begin(), value.end(), ' ', '%');
-                    select << "p.lower(name) like lower(?) ";
+                    select << "and p.lower(name) like lower(?) ";
                     select.bind("%" + value + "%");
-                    addWhere = false;
                 } else if (key_value.first == "creation_date_start") {
                     int tzd;
                     Poco::DateTime dateTime;
                     Poco::DateTimeParser::parse(key_value.first, dateTime, tzd);
-                    select << "creation_date >= ? ";
+                    select << "and creation_date >= ? ";
                     select.bind(dateTime);
                 } else if (key_value.first == "creation_date_end") {
                     int tzd;
                     Poco::DateTime dateTime;
                     Poco::DateTimeParser::parse(key_value.first, dateTime, tzd);
-                    select << "creation_date <= ? ";
+                    select << "and creation_date <= ? ";
                     select.bind(dateTime);
                 }
             }
@@ -111,13 +102,16 @@ namespace database {
     }
 
     Product Product::get_by_id(long id) {
+        if (id < 1) {
+            return Product::empty();
+        }
         try {
             Poco::Data::Session session = database::Database::get().create_session();
             Poco::Data::Statement select(session);
             Product lot;
 
-            select << "select p.id, p.name, p.description, p.cost, p.seller_id, p.creation_date, "
-                << "u.id, u.login, u.name, u.email from "  << TABLE_NAME
+            select << "select p.id, p.name, p.description, p.cost, p.seller_id, p.creation_date, p.deleted, "
+                << "u.id, u.login, u.name, u.email, u.deleted from "  << TABLE_NAME
                 << " p inner join _user u on u.id = p.seller_id where p.id = ?",
                 into(lot._id),
                 into(lot._name),
@@ -125,10 +119,12 @@ namespace database {
                 into(lot._cost),
                 into(lot._seller_id),
                 into(lot._creation_date),
+                into(lot._deleted),
                 into(lot._seller.id()),
                 into(lot._seller.login()),
                 into(lot._seller.name()),
                 into(lot._seller.email()),
+                into(lot._seller.deleted()),
                 use(id),
                 range(0, 1);
         
@@ -154,11 +150,12 @@ namespace database {
             Poco::Data::Statement statement(session);
 
             statement << "update " << TABLE_NAME 
-                << " set name = ?, description = ? , cost = ? , seller_id = ? where id = ?",
+                << " set name = ?, description = ? , cost = ? , seller_id = ?, deleted = ? where id = ?",
                 use(_name),
                 use(_description),
                 use(_cost),
                 use(_seller_id),
+                use(_deleted),
                 use(_id);
 
             statement.execute();
@@ -240,6 +237,7 @@ namespace database {
         root->set("cost", _cost);
         root->set("seller_id", _seller_id);
         root->set("creation_date", _creation_date);
+        root->set("deleted", _deleted);
 
         if (_seller.get_id() > 0) {
             root->set("seller", _seller.toJSON());
@@ -267,6 +265,7 @@ namespace database {
         lot.description() = getOrDefault<std::string>(object, "name", "");
         lot.cost() = getOrDefault<float>(object, "cost", 0);
         lot.seller_id() = getOrDefault<long>(object, "seller_id", 0);
+        lot.deleted() = getOrDefault<bool>(object, "deleted", false);
 
         if (object->has("creation_date")) {
             lot.creattion_date() = object->getValue<Poco::DateTime>("creation_date");
@@ -334,5 +333,13 @@ namespace database {
 
     Poco::DateTime &Product::creattion_date() {
         return _creation_date;
+    }
+
+    bool Product::is_deleted() const {
+        return _deleted;
+    }
+
+    bool &Product::deleted() {
+        return _deleted;
     }
 }

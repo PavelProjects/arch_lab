@@ -1,4 +1,4 @@
-#include "auth_service/auth_service.h"
+#include "auth_service/auth_rest.h"
 
 int main(int argc, char*argv[]) {
     HTTPAuthWebServer app;

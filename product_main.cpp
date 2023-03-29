@@ -1,4 +1,4 @@
-#include "product_service/product_service.h"
+#include "product_service/product_rest.h"
 
 int main(int argc, char*argv[]) {
     HTTPProductWebServer app;

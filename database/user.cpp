@@ -26,7 +26,7 @@ namespace database {
             std::cout << "Session created" << std::endl;
             Poco::Data::Statement select(session);
             long id;
-            select << "SELECT id FROM " << TABLE_NAME << " where login=? and password=?",
+            select << "SELECT id FROM " << TABLE_NAME << " where login=? and password=? and deleted = false",
                 into(id),
                 use(login),
                 use(password),
@@ -48,11 +48,12 @@ namespace database {
             Poco::Data::Statement select(session);
             User user;
 
-            select << "select id, login, email, name from "  << TABLE_NAME << " where id = ?",
+            select << "select id, login, email, name, deleted from "  << TABLE_NAME << " where id = ?",
                 into(user._id),
                 into(user._login),
                 into(user._email),
                 into(user._name),
+                into(user._deleted),
                 use(id),
                 range(0, 1);
         
@@ -121,11 +122,12 @@ namespace database {
         try {
             Poco::Data::Statement statement(session);
 
-            statement << "update " << TABLE_NAME << " set name = ?, email = ? , login = ? , password = ? where id = ?",
+            statement << "update " << TABLE_NAME << " set name = ?, email = ? , login = ? , password = ?, deleted = ? where id = ?",
                 use(_name),
                 use(_email),
                 use(_login),
                 use(_password),
+                use(_deleted),
                 use(_id);
 
             statement.execute();
@@ -177,23 +179,18 @@ namespace database {
                 conditions.push_back("lower(email) like '%" + likeUser.get_email() + "%'");
             }
 
-            select << "select id, login, email, name from "  << TABLE_NAME,
+            select << "select id, login, email, name, deleted from "  << TABLE_NAME << " where deleted = false",
                 into(user._id),
                 into(user._login),
                 into(user._email),
                 into(user._name),
+                into(user._deleted),
                 range(0, 1);
 
             if (conditions.size() > 0) {
                 std::string cond_str;
                 for (std::string cond: conditions) {
-                    if (cond_str.length() == 0) {
-                        cond_str = " where ";
-                    } else {
-                        cond_str += " and ";
-                    }
-
-                    cond_str += cond;
+                    cond_str += " and " + cond;
                 }
                 std::cout << "Search condition: " << cond_str << std::endl;
                 
@@ -222,6 +219,7 @@ namespace database {
         root->set("email", _email);
         root->set("login", _login);
         root->set("password", _password);
+        root->set("deleted", _deleted);
 
         return root;
     }
@@ -245,6 +243,7 @@ namespace database {
         user.email() = getOrDefault<std::string>(object, "email", "");
         user.login() = getOrDefault<std::string>(object, "login", "");
         user.password() = getOrDefault<std::string>(object, "password", "");
+        user.deleted() = getOrDefault<bool>(object, "deleted", false);
 
         return user;
     }
@@ -287,5 +286,13 @@ namespace database {
 
     std::string &User::email() {
         return _email;
+    }
+
+    bool User::is_deleted() const {
+        return _deleted;
+    }
+
+    bool &User::deleted() {
+        return _deleted;
     }
 }

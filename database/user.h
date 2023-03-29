@@ -13,6 +13,7 @@ namespace database {
             std::string _name;
             std::string _email;
             std::string _password;
+            bool _deleted;
 
             void insert_entity();
             void update_entity();
@@ -30,12 +31,14 @@ namespace database {
             const std::string &get_email() const;
             const std::string &get_login() const;
             const std::string &get_password() const;
+            bool is_deleted() const;
 
             long& id();
             std::string &name();
             std::string &email();
             std::string &login();
             std::string &password();
+            bool &deleted();
 
             static long auth(std::string &login, std::string &password);
             static User get_by_id(long id);

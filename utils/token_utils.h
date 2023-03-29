@@ -42,7 +42,7 @@ std::string generate_token(long &id, std::string &login) {
     return signer.sign(token, Poco::JWT::Signer::ALGO_HS256);
 }
 
-bool validate_token(std::string &jwt_token, long &id, std::string &login) {
+bool extract_payload(std::string &jwt_token, long &id, std::string &login) {
     if (jwt_token.length() == 0) {
         return false;
     }

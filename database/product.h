@@ -15,6 +15,7 @@ namespace database {
             std::string _description;
             float _cost;
             long _seller_id;
+            bool _deleted;
             User _seller = User::empty();
             Poco::DateTime _creation_date;
 
@@ -34,6 +35,7 @@ namespace database {
             const std::string &get_description() const;
             float get_cost() const;
             const Poco::DateTime &get_creation_date() const;
+            bool is_deleted() const;
             long get_seller_id() const;
             const User &get_seller() const;
 
@@ -42,6 +44,7 @@ namespace database {
             std::string &description();
             float &cost();
             Poco::DateTime &creattion_date();
+            bool &deleted();
             long &seller_id();
             User &seller();
 

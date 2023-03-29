@@ -4,6 +4,7 @@ create table _user (
     password varchar(256) not null, 
     name varchar(256) not null, 
     email varchar(128) not null unique, 
+    deleted boolean not null default false,
     PRIMARY KEY(id)
 );
 insert into _user(login, password,  name, email) values ('autotest1', '123', 'Test User 1', 'email@dot1.com');
@@ -16,6 +17,7 @@ create table _product (
     cost float not null,
     seller_id int not null references _user(id),
     creation_date DATETIME not null default now(),
+    deleted boolean not null default false,
     PRIMARY KEY(id)
 );
 insert into _product (name, description, cost, seller_id) 
