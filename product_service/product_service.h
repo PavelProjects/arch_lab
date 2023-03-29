@@ -67,33 +67,33 @@ void edit_product(long &user_id, std::string &body) {
     if (product.get_id() <= 0) {
         throw not_found_exception("Can't find product with id " + std::to_string(product.get_id()));
     }
-    if (product.get_seller_id() != user_id && !database::User::have_role(product.get_seller_id(), "admin")) {
+    if (product.get_seller_id() == user_id || database::User::have_role(product.get_seller_id(), "admin")) {
+        std::string validation_message;
+        if (obj->has("name")) {
+            std::string value = obj->getValue<std::string>("name");
+            check_name(value, validation_message);
+            product.name() = obj->getValue<std::string>("name");
+        }
+        if (obj->has("description")) {
+            std::string value = obj->getValue<std::string>("description");
+            check_email(value, validation_message);
+            product.description() = obj->getValue<std::string>("description");
+        }
+        if (obj->has("cost")) {
+            if (obj->getValue<float>("cost") > 0) {
+                product.cost() = obj->getValue<float>("cost");
+            } else {
+                validation_message += "cost can't be negative;";
+            }
+        }
+        if (validation_message.length() > 0) {
+            throw validation_exception(validation_message);
+        }
+
+        product.save_to_db();
+    } else {
         throw access_denied_exception("Current user can't edit this product");
     }
-
-    std::string validation_message;
-    if (obj->has("name")) {
-        std::string value = obj->getValue<std::string>("name");
-        check_name(value, validation_message);
-        product.name() = obj->getValue<std::string>("name");
-    }
-    if (obj->has("description")) {
-        std::string value = obj->getValue<std::string>("description");
-        check_email(value, validation_message);
-        product.description() = obj->getValue<std::string>("description");
-    }
-    if (obj->has("cost")) {
-        if (obj->getValue<float>("cost") > 0) {
-            product.cost() = obj->getValue<float>("cost");
-        } else {
-            validation_message += "cost can't be negative;";
-        }
-    }
-    if (validation_message.length() > 0) {
-        throw validation_exception(validation_message);
-    }
-
-    product.save_to_db();
 }
 
 void delete_product(long &user_id, std::vector<std::pair<std::string, std::string>> params) {
@@ -111,12 +111,14 @@ void delete_product(long &user_id, std::vector<std::pair<std::string, std::strin
         throw not_found_exception("Can't find product by id " + product_id);
     }
 
-    if (product.get_seller_id() != user_id && !database::User::have_role(product.get_seller_id(), "admin")) {
+    if (product.get_seller_id() == user_id || database::User::have_role(product.get_seller_id(), "admin")) {
+        product.deleted() = true;
+        product.save_to_db();
+        std::cout << "User " << user_id << " deleted product " << product_id << std::endl;
+    } else {
         throw access_denied_exception("Current user can't deleted this product");
     }
 
-    product.deleted() = true;
-    product.save_to_db();
 }
 
 #endif

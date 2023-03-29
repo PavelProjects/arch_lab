@@ -119,8 +119,9 @@ class AuthRequestHandler : public HTTPRequestHandler {
                             root->set("token", token);
                             std::ostream &ostr = response.send();
                             Poco::JSON::Stringifier::stringify(root, ostr);
+                        } else {
+                            throw validation_exception("Only basic auth accepted");
                         }
-                        throw validation_exception("Only basic auth accepted");
                     } else if (hasSubstr(request.getURI(), "/validate")) {
                         std::string scheme;
                         std::string token;
@@ -138,8 +139,9 @@ class AuthRequestHandler : public HTTPRequestHandler {
                             root->set("id", user.get_id());
                             std::ostream &ostr = response.send();
                             Poco::JSON::Stringifier::stringify(root, ostr);
+                        } else {
+                            throw access_denied_exception("No bearer token found");
                         }
-                        throw access_denied_exception("No bearer token found");
                     }
                 }
                 if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {

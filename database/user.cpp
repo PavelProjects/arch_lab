@@ -71,10 +71,6 @@ namespace database {
         }
     }
 
-    bool User::is_admin() {
-        return have_role(_id, "admin");
-    }
-
     User User::get_by_id(long id) {
         try {
             Poco::Data::Session session = database::Database::get().create_session();
