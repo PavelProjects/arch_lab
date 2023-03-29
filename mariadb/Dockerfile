@@ -8,7 +8,6 @@ RUN apt-get clean && apt-get update --fix-missing && \
 # MySQL Custom Configs
 COPY my.cnf /etc/mysql/
 COPY mysql.conf.d/ /etc/mysql/mysql.conf.d/
-ADD rollout.sql /docker-entrypoint-initdb.d
 
 # Touching log files
 RUN touch -a /var/log/mysql/error.log && chown mysql:adm /var/log/mysql/error.log

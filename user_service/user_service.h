@@ -59,13 +59,12 @@ std::vector<database::User> search(std::vector<std::pair<std::string, std::strin
 void delete_user(long user_id, std::vector<std::pair<std::string, std::string>> params) {
     long delete_user_id = -1;
 
-    std::string product_id;
     for (auto key_value: params) {
         if (key_value.first == "id") {
             if (key_value.second.length() == 0) {
                 throw validation_exception("Id can't be blank");
             }
-            product_id = atoi(key_value.second.c_str());
+            delete_user_id = atoi(key_value.second.c_str());
         }
     }
 

@@ -68,7 +68,7 @@ paths:
       security:
         - bearerAuth: []
 
-  /user/edit:
+  /user:
     put:
       summary: Edit user
       requestBody:
@@ -90,6 +90,21 @@ paths:
           $ref: '#/components/responses/NotFoundException'
       security:
         - bearerAuth: []
+    delete:
+      summary: Delete user by id
+      parameters:
+        - name: id
+          description: User id
+          in: query
+          schema:
+            $ref: '#/components/schemas/user_id'
+      responses:
+        200:
+          description: User deleted
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalServerException'
   /user/search:
     get:
       summary: Search users
@@ -171,6 +186,21 @@ paths:
           $ref: '#/components/responses/NotFoundException'
       security:
         - bearerAuth: []
+    delete:
+      summary: Delete product by id
+      parameters:
+        - name: id
+          description: Product id
+          in: query
+          schema:
+            $ref: '#/components/schemas/product_id'
+      responses:
+        200:
+          description: Product delete
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalServerException'
   /product/search:
     get:
       summary: Search products
