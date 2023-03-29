@@ -135,12 +135,12 @@ class ProductRequesthandler: public HTTPRequestHandler {
                     }
                 } else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {
                     std::string body = extractBody(request.stream(), request.getContentLength());
-                    long id = create_product(id, login, body);
+                    long created = create_product(id, login, body);
                     response.setStatus(Poco::Net::HTTPResponse::HTTP_CREATED);
                     response.setChunkedTransferEncoding(true);
                     response.setContentType("application/json");
                     std::ostream &ostr = response.send();
-                    ostr << id;
+                    ostr << created;
                 } else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_PUT) {
                     std::string body = extractBody(request.stream(), request.getContentLength());
                     edit_product(id, body);

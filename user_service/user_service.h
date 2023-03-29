@@ -15,7 +15,7 @@ void edit_user(long user_id, std::string body) {
     database::User user = database::User::get_by_id(obj->getValue<long>("id"));
     if (user.get_id() <= 0) {
         throw not_found_exception("Can't find user");
-    } else if (user.get_id() != user_id) { // todo add user role check
+    } else if (user.get_id() != user_id || !user.is_admin()) {
         throw not_found_exception("Current user can't edit " + user.get_login());
     } 
 
@@ -72,13 +72,14 @@ void delete_user(long user_id, std::vector<std::pair<std::string, std::string>> 
         throw validation_exception("Not valid user id");
     }
 
-    if (user_id != delete_user_id) {
-        throw access_denied_exception("Current user can't delete this user");
-    }
 
     database::User user = database::User::get_by_id(delete_user_id);
     if (user.get_id() <= 0) {
         throw not_found_exception("Can't find user");
+    }
+    
+    if (user_id != user.get_id() || !user.is_admin()) {
+        throw access_denied_exception("Current user can't delete this user");
     }
 
     user.deleted() = true;

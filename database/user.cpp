@@ -42,6 +42,39 @@ namespace database {
         return 0;
     }
 
+    bool User::have_role(long user_id, std::string role_name) {
+        try {
+            Poco::Data::Session session = database::Database::get().create_session();
+            Poco::Data::Statement select(session);
+            
+            bool result = false;
+
+            select << "select true from _users_roles ur "
+                << "inner join _roles r on r.id = ur.role_id"
+                << "where ur.user_id = ? and r.name = ?",
+                into(result),
+                use(user_id),
+                use(role_name),
+                range(0, 1);
+        
+            Poco::Data::RecordSet rs(select);
+            if (rs.moveFirst())
+                return result;
+
+            return false;
+        } catch (Poco::Data::MySQL::ConnectionException &e) {
+            std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
+            throw;
+        } catch (Poco::Data::MySQL::StatementException &e) {
+            std::cout << "statement:" << e.what() << " :: " << e.message() << std::endl;
+            throw;
+        }
+    }
+
+    bool User::is_admin() {
+        return have_role(_id, "admin");
+    }
+
     User User::get_by_id(long id) {
         try {
             Poco::Data::Session session = database::Database::get().create_session();

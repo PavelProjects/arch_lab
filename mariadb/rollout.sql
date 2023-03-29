@@ -1,3 +1,10 @@
+create table _roles (
+    id INT NOT NULL AUTO_INCREMENT, 
+    name varchar(64) not null unique,
+    caption varchar(64) not null
+);
+insert into _roles (name, caption) values ("admin", "Admin role");
+
 create table _user (
     id INT NOT NULL AUTO_INCREMENT, 
     login varchar(128) not null unique, 
@@ -7,8 +14,14 @@ create table _user (
     deleted boolean not null default false,
     PRIMARY KEY(id)
 );
+create table _users_roles (
+    role_id int references _roles(id),
+    user_id int references _user(id)
+);
+
 insert into _user(login, password,  name, email) values ('autotest1', '123', 'Test User 1', 'email@dot1.com');
 insert into _user(login, password,  name, email) values ('autotest2', '123', 'Test User 2', 'email@dot2.com');
+insert into _users_roles select r.id, u.id from _user u, _roles r where u.login = 'autotest1' and r.name = 'admin';
 
 create table _product (
     id INT NOT NULL AUTO_INCREMENT,
