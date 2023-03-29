@@ -67,7 +67,7 @@ void edit_product(long &user_id, std::string &body) {
     if (product.get_id() <= 0) {
         throw not_found_exception("Can't find product with id " + std::to_string(product.get_id()));
     }
-    if (product.get_seller_id() != user_id || database::User::have_role(product.get_seller_id(), "admin")) {
+    if (product.get_seller_id() != user_id && !database::User::have_role(product.get_seller_id(), "admin")) {
         throw access_denied_exception("Current user can't edit this product");
     }
 
@@ -111,7 +111,7 @@ void delete_product(long &user_id, std::vector<std::pair<std::string, std::strin
         throw not_found_exception("Can't find product by id " + product_id);
     }
 
-    if (product.get_seller_id() != user_id || database::User::have_role(product.get_seller_id(), "admin")) {
+    if (product.get_seller_id() != user_id && !database::User::have_role(product.get_seller_id(), "admin")) {
         throw access_denied_exception("Current user can't deleted this product");
     }
 

@@ -24,8 +24,8 @@ services:
       test: "/usr/bin/mysql --host=db_node_01 --database=${DB_DATABASE} --user=${DB_LOGIN} --password=${DB_PASSWORD} --execute \"SHOW DATABASES;\""
       timeout: 5s
       retries: 5
-    volumes:
-      - db-node-01-data:/var/lib/mysql
+    # volumes:
+    #   - db-node-01-data:/var/lib/mysql
 
   auth_service:
     build:

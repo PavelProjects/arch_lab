@@ -1,7 +1,8 @@
 create table _roles (
     id INT NOT NULL AUTO_INCREMENT, 
     name varchar(64) not null unique,
-    caption varchar(64) not null
+    caption varchar(64) not null,
+    PRIMARY KEY(id)
 );
 insert into _roles (name, caption) values ("admin", "Admin role");
 
