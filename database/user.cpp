@@ -50,13 +50,14 @@ namespace database {
             bool result = false;
 
             select << "select true from _users_roles ur "
-                << "inner join _roles r on r.id = ur.role_id"
+                << "inner join _roles r on r.id = ur.role_id "
                 << "where ur.user_id = ? and r.name = ?",
                 into(result),
                 use(user_id),
                 use(role_name),
                 range(0, 1);
         
+            select.execute();
             Poco::Data::RecordSet rs(select);
             if (rs.moveFirst())
                 return result;

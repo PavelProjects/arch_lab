@@ -77,7 +77,7 @@ void delete_user(long user_id, std::vector<std::pair<std::string, std::string>> 
     if (user.get_id() <= 0) {
         throw not_found_exception("Can't find user");
     }
-    
+
     if (user_id == user.get_id() || database::User::have_role(user_id, "admin")) {
         user.deleted() = true;
         user.save_to_db();
