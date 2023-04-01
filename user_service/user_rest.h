@@ -103,7 +103,7 @@ class UserRequestHandler : public HTTPRequestHandler {
         void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
             if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_OPTIONS) {
                 response.add("Access-Control-Allow-Origin", "*");
-                response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_ACCEPTED);
                 response.send();
                 return;
             }
@@ -155,7 +155,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                 }
             } catch (validation_exception &ex) {
                 std::cout << "Validation exception: " << ex.what() << std::endl;
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
                 response.setChunkedTransferEncoding(true);
                 response.setContentType("application/json");
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
@@ -166,7 +166,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                 Poco::JSON::Stringifier::stringify(root, ostr);
             } catch (not_found_exception &ex) {
                 std::cout << "Not found exception: " << ex.what() << std::endl;
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
                 response.setChunkedTransferEncoding(true);
                 response.setContentType("application/json");
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
@@ -177,7 +177,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                 Poco::JSON::Stringifier::stringify(root, ostr);
             } catch (access_denied_exception &ex) {   
                 std::cout << "Access denied exception: " << ex.what() << std::endl;
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
                 response.setChunkedTransferEncoding(true);
                 response.setContentType("application/json");
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
@@ -188,7 +188,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                 Poco::JSON::Stringifier::stringify(root, ostr);
             } catch (std::exception &ex) {
                 std::cout << "Server exception: " << ex.what() << std::endl;
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_INTERNAL_SERVER_ERROR);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTPStatus::HTTP_INTERNAL_SERVER_ERROR);
                 response.setChunkedTransferEncoding(true);
                 response.setKeepAlive(true);
                 response.setContentType("application/json");
@@ -201,7 +201,7 @@ class UserRequestHandler : public HTTPRequestHandler {
                 Poco::JSON::Stringifier::stringify(root, ostr);
             }
             if (!response.sent()) {
-                response.setStatus(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
                 response.setChunkedTransferEncoding(true);
                 response.setContentType("application/json");
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
