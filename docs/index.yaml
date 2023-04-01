@@ -106,6 +106,8 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         500:
           $ref: '#/components/responses/InternalServerException'
+      security:
+        - bearerAuth: []
   /user/search:
     servers: 
       - url: http://localhost:8082/
@@ -206,6 +208,8 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         500:
           $ref: '#/components/responses/InternalServerException'
+      security:
+        - bearerAuth: []
   /product/search:
     servers: 
       - url: http://localhost:8083/
@@ -367,6 +371,3 @@ components:
         type: http
         scheme: bearer
         bearerFormat: JWT
-security:
-  - basicAuth: []
-  - bearerAuth: []  
