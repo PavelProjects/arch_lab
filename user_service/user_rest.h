@@ -101,6 +101,13 @@ class UserRequestHandler : public HTTPRequestHandler {
         UserRequestHandler(const std::string &format): _format(format){};
 
         void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
+            if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_OPTIONS) {
+                response.add("Access-Control-Allow-Origin", "*");
+                response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                response.send();
+                return;
+            }
+            
             try {
                 std::string scheme;
                 std::string token;

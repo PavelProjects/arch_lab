@@ -3,15 +3,10 @@ info:
   version: '1.0.0'
   title: 'Arch lab API'
   description: 'Описание API сервера сайта заказа услуг'
-servers:
-  - url: http://localhost:8081/auth
-    description: authentication server
-  - url: http://localhost:8082/user
-    description: user server
-  - url: http://localhost:8083/product
-    description: product server
 paths:
   /auth/sign/in:
+    servers: 
+      - url: http://localhost:8081/
     get:
       summary: Authorization
       responses:
@@ -28,6 +23,8 @@ paths:
       security: 
         - basicAuth: []
   /auth/sign/up:
+    servers: 
+      - url: http://localhost:8081/
     post:
       summary: User creation
       requestBody:
@@ -48,6 +45,8 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerException'
   /auth/validate:
+    servers: 
+      - url: http://localhost:8081/
     get:
       summary: Session token validation
       responses:
@@ -69,6 +68,8 @@ paths:
         - bearerAuth: []
 
   /user:
+    servers: 
+      - url: http://localhost:8082/
     put:
       summary: Edit user
       requestBody:
@@ -106,6 +107,8 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerException'
   /user/search:
+    servers: 
+      - url: http://localhost:8082/
     get:
       summary: Search users
       parameters:
@@ -139,6 +142,8 @@ paths:
         - bearerAuth: []
 
   /product:
+    servers: 
+      - url: http://localhost:8083/
     post:
       summary: Create new product
       requestBody:
@@ -202,6 +207,8 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerException'
   /product/search:
+    servers: 
+      - url: http://localhost:8083/
     get:
       summary: Search products
       parameters:
