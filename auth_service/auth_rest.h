@@ -106,6 +106,7 @@ class AuthRequestHandler : public HTTPRequestHandler {
                 response.add("Access-Control-Allow-Origin", "*");
                 response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_ACCEPTED);
                 response.send();
+                return;
             }
 
             try {
