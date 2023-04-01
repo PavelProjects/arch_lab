@@ -170,7 +170,7 @@ class ProductRequesthandler: public HTTPRequestHandler {
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                 root->set("type", "/errors/validation");
                 root->set("detail", ex.what());
-                root->set("status", Poco::Net::HTTPResponse::HTTPStatus::HTTP_BAD_REQUEST);
+                root->set("status", Poco::Net::HTTPResponse::HTTP_REASON_BAD_REQUEST);
                 std::ostream &ostr = response.send();
                 Poco::JSON::Stringifier::stringify(root, ostr);
             } catch (not_found_exception &ex) {
@@ -181,7 +181,7 @@ class ProductRequesthandler: public HTTPRequestHandler {
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                 root->set("type", "/errors/not_found");
                 root->set("detail", ex.what());
-                root->set("status", Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
+                root->set("status", Poco::Net::HTTPResponse::HTTP_REASON_NOT_FOUND);
                 std::ostream &ostr = response.send();
                 Poco::JSON::Stringifier::stringify(root, ostr);
             } catch (access_denied_exception &ex) {   
@@ -192,7 +192,7 @@ class ProductRequesthandler: public HTTPRequestHandler {
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                 root->set("type", "/errors/anauthorized");
                 root->set("detail", ex.what());
-                root->set("status", Poco::Net::HTTPResponse::HTTPStatus::HTTP_UNAUTHORIZED);
+                root->set("status", Poco::Net::HTTPResponse::HTTP_REASON_UNAUTHORIZED);
                 std::ostream &ostr = response.send();
                 Poco::JSON::Stringifier::stringify(root, ostr);
             } catch (std::exception &ex) {
@@ -204,7 +204,7 @@ class ProductRequesthandler: public HTTPRequestHandler {
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                 root->set("type", "/errors/server_error");
                 root->set("title", "Internal exception");
-                root->set("status", Poco::Net::HTTPResponse::HTTPStatus::HTTP_INTERNAL_SERVER_ERROR);
+                root->set("status", Poco::Net::HTTPResponse::HTTP_REASON_INTERNAL_SERVER_ERROR);
                 root->set("detail", ex.what());
                 std::ostream &ostr = response.send();
                 Poco::JSON::Stringifier::stringify(root, ostr);
@@ -216,7 +216,7 @@ class ProductRequesthandler: public HTTPRequestHandler {
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                 root->set("type", "/errors/not_found");
                 root->set("detail", "Requested page is not available");
-                root->set("status", Poco::Net::HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
+                root->set("status", Poco::Net::HTTPResponse::HTTP_REASON_NOT_FOUND);
                 std::ostream &ostr = response.send();
                 Poco::JSON::Stringifier::stringify(root, ostr);
             }
