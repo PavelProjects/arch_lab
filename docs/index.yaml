@@ -4,24 +4,6 @@ info:
   title: 'Arch lab API'
   description: 'Описание API сервера сайта заказа услуг'
 paths:
-  /auth/sign/in:
-    servers: 
-      - url: http://localhost:8081/
-    get:
-      summary: Authorization
-      responses:
-        200:
-          description: Session token created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/token'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-        500:
-          $ref: '#/components/responses/InternalServerException'
-      security: 
-        - basicAuth: []
   /auth/sign/up:
     servers: 
       - url: http://localhost:8081/
@@ -44,6 +26,25 @@ paths:
                 $ref: '#/components/schemas/user_id'
         500:
           $ref: '#/components/responses/InternalServerException'
+  /auth/sign/in:
+    servers: 
+      - url: http://localhost:8081/
+    get:
+      summary: Authorization
+      responses:
+        200:
+          description: Session token created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/token'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalServerException'
+      security: 
+        - basicAuth: []
+  
   /auth/validate:
     servers: 
       - url: http://localhost:8081/
