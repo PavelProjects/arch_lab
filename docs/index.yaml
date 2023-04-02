@@ -10,7 +10,7 @@ paths:
     get:
       summary: Authorization
       responses:
-        201:
+        200:
           description: Session token created
           content:
             application/json:
@@ -272,7 +272,10 @@ components:
   schemas:
     token:
       description: User session token
-      type: string
+      type: object
+      properties:
+        token:
+          type: string
     user_id:
       description: User unique id
       type: integer
@@ -283,11 +286,6 @@ components:
     user:
       description: User entity
       type: object
-      required:
-        - id
-        - name
-        - email
-        - login
       properties:
         id:
           $ref: '#/components/schemas/user_id'
@@ -297,6 +295,8 @@ components:
           type: string
         login:
           type: string
+        deleted:
+          type: boolean
     user_create:
       description: Entity for creation user
       type: object
@@ -344,6 +344,8 @@ components:
           type: string
         creation_date:
           type: string
+        deleted:
+          type: boolean
         seller_id:
           $ref: '#/components/schemas/user_id'
         seller:

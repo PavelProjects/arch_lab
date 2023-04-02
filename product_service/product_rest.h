@@ -103,9 +103,13 @@ class ProductRequesthandler: public HTTPRequestHandler {
     public:
         ProductRequesthandler(const std::string &format): _format(format){};
         void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
+            response.add("Access-Control-Allow-Origin", "*");
+            response.add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
+            response.add("Access-Control-Allow-Headers", "Content-Type, api_key, Authorization");
             if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_OPTIONS) {
-                response.add("Access-Control-Allow-Origin", "*");
-                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_ACCEPTED);
+                response.setContentType("application/json");
+                response.setKeepAlive(true);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_OK);
                 response.send();
                 return;
             }

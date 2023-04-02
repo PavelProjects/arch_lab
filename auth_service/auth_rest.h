@@ -102,9 +102,13 @@ class AuthRequestHandler : public HTTPRequestHandler {
         AuthRequestHandler(const std::string &format): _format(format){};
 
         void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
+            response.add("Access-Control-Allow-Origin", "*");
+            response.add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
+            response.add("Access-Control-Allow-Headers", "Content-Type, api_key, Authorization");
             if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_OPTIONS) {
-                response.add("Access-Control-Allow-Origin", "*");
-                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_ACCEPTED);
+                response.setContentType("application/json");
+                response.setKeepAlive(true);
+                response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_OK);
                 response.send();
                 return;
             }
@@ -119,7 +123,7 @@ class AuthRequestHandler : public HTTPRequestHandler {
 
                         if (scheme == "Basic") {
                             std::string token = auth_user(info);
-                            response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                            response.setStatusAndReason(Poco::Net::HTTPResponse::HTTP_OK);
                             response.setChunkedTransferEncoding(true);
                             response.setContentType("application/json");
                             Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
@@ -201,7 +205,6 @@ class AuthRequestHandler : public HTTPRequestHandler {
                 std::cout << "Server exception: " << ex.what() << std::endl;
                 response.setStatusAndReason(Poco::Net::HTTPResponse::HTTPStatus::HTTP_INTERNAL_SERVER_ERROR);
                 response.setChunkedTransferEncoding(true);
-                response.setKeepAlive(true);
                 response.setContentType("application/json");
                 Poco::JSON::Object::Ptr root = new Poco::JSON::Object();
                 root->set("type", "/errors/server_error");

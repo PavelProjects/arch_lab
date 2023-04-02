@@ -248,7 +248,6 @@ namespace database {
         root->set("name", _name);
         root->set("email", _email);
         root->set("login", _login);
-        root->set("password", _password);
         root->set("deleted", _deleted);
 
         return root;
