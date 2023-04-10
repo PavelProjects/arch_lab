@@ -254,18 +254,13 @@ namespace database {
 
     std::vector<User> User::search(User likeUser) {
         try {
-            std::cout << "1" << std::endl; 
-
             Poco::Data::Session session = database::Database::get().create_session();
-            std::cout << "2" << std::endl; 
             
             std::vector<User> result;
-            std::cout << "3" << std::endl; 
 
             std::string sql = "select id, login, email, name, deleted from ";
             sql += TABLE_NAME;
             sql += " where deleted = false";
-            std::cout << "4" << std::endl; 
 
             if (likeUser.get_name().length() > 0) {
                 std::replace(likeUser.name().begin(), likeUser.name().end(), ' ', '%');
