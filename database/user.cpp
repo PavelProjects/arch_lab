@@ -23,18 +23,28 @@ namespace database {
         try {
             std::cout << "Trying to auth " << login << "::" << password << std::endl;
             Poco::Data::Session session = database::Database::get().create_session();
-            std::cout << "Session created" << std::endl;
-            Poco::Data::Statement select(session);
+            
             long id;
-            select << "SELECT id FROM " << TABLE_NAME << " where login=? and password=? and deleted = false",
-                into(id),
-                use(login),
-                use(password),
-                range(0, 1);
+            std::vector<std::string> shards = database::Database::get_all_hints();
+            for (const std::string &shard: shards) {
+                Poco::Data::Statement select(session);
+                select << "SELECT id FROM " << TABLE_NAME << " where login=? and password=? and deleted = false"
+                    << shard,
+                    into(id),
+                    use(login),
+                    use(password),
+                    range(0, 1);
 
-            select.execute();
-            Poco::Data::RecordSet rs(select);
-            if (rs.moveFirst()) return id;
+                std::cout << "[DEBUG SQL] " << select.toString() << std::endl; 
+
+                select.execute();
+                Poco::Data::RecordSet rs(select);
+                if (rs.moveFirst()) {
+                    std::cout << id <<std::endl;
+                    return id;
+                }
+            }
+            
         } catch (Poco::Data::DataException &e) {
             std::cout << "Exception: " << e.what() << " :: " << e.message() << std::endl;
             return -1;
@@ -49,14 +59,16 @@ namespace database {
             
             bool result = false;
 
-            select << "select true from _users_roles ur "
-                << "inner join _roles r on r.id = ur.role_id "
-                << "where ur.user_id = ? and r.name = ?",
+            select << "select true from _users_roles "
+                << "where user_id = ? and role_name = ?"
+                << database::Database::sharding_hint(user_id),
                 into(result),
                 use(user_id),
                 use(role_name),
                 range(0, 1);
         
+            std::cout << "[DEBUG SQL] " << select.toString() << std::endl; 
+                
             select.execute();
             Poco::Data::RecordSet rs(select);
             if (rs.moveFirst())
@@ -71,6 +83,58 @@ namespace database {
             throw;
         }
     }
+    void User::add_role(long user_id, std::string role) {
+        Poco::Data::Session session = database::Database::get().create_session();
+        session.begin();
+        try {
+            Poco::Data::Statement statement(session);
+
+            statement << "INSERT INTO _users_roles (role_name, user_id) VALUES(?, ?)"
+                << database::Database::sharding_hint(user_id),
+                use(role),
+                use(user_id);
+
+            std::cout << "[DEBUG SQL] " << statement.toString() << std::endl; 
+
+            statement.execute();
+            session.commit();
+            std::cout << "Added role [" << role << "] to user " << user_id << std::endl;
+        } catch (Poco::Data::MySQL::ConnectionException &e) {
+            session.rollback();
+            std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
+            throw;
+        } catch (Poco::Data::MySQL::StatementException &e) {
+            session.rollback();
+            std::cout << "statement:" << e.what() << " :: " << e.message() << std::endl;
+            throw;
+        }
+    }
+    void User::remove_role(long user_id, std::string role) {
+        Poco::Data::Session session = database::Database::get().create_session();
+        session.begin();
+        try {
+            Poco::Data::Statement statement(session);
+
+            statement << "delete from _users_roles where role_name = ? and user_id = ? "
+                << database::Database::sharding_hint(user_id),
+                use(role),
+                use(user_id);
+
+            std::cout << "[DEBUG SQL] " << statement.toString() << std::endl; 
+
+            statement.execute();
+            session.commit();
+            std::cout << "Removed role [" << role << "] to user " << user_id << std::endl;
+        } catch (Poco::Data::MySQL::ConnectionException &e) {
+            session.rollback();
+            std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
+            throw;
+        } catch (Poco::Data::MySQL::StatementException &e) {
+            session.rollback();
+            std::cout << "statement:" << e.what() << " :: " << e.message() << std::endl;
+            throw;
+        }
+    }
 
     User User::get_by_id(long id) {
         try {
@@ -78,7 +142,8 @@ namespace database {
             Poco::Data::Statement select(session);
             User user;
 
-            select << "select id, login, email, name, deleted from "  << TABLE_NAME << " where id = ?",
+            select << "select id, login, email, name, deleted from "  << TABLE_NAME << " where id = ?"
+                << database::Database::sharding_hint(id),
                 into(user._id),
                 into(user._login),
                 into(user._email),
@@ -86,6 +151,8 @@ namespace database {
                 into(user._deleted),
                 use(id),
                 range(0, 1);
+
+            std::cout << "[DEBUG SQL] " << select.toString() << std::endl; 
         
             select.execute();
             Poco::Data::RecordSet rs(select);
@@ -108,33 +175,30 @@ namespace database {
         } else {
             insert_entity();
         }
-    }
+    }   
 
     void User::insert_entity() {
+        _id = database::Database::generate_new_id();
+
         Poco::Data::Session session = database::Database::get().create_session();
         session.begin();
         try {
             Poco::Data::Statement statement(session);
 
-            statement << "INSERT INTO " << TABLE_NAME << " (name, email, login, password) VALUES(?, ?, ?, ?)",
+            // todo check if email and login exists
+            statement << "INSERT INTO " << TABLE_NAME << " (id, name, email, login, password) VALUES(?, ?, ?, ?, ?)"
+                << database::Database::sharding_hint(_id),
+                use(_id),
                 use(_name),
                 use(_email),
                 use(_login),
                 use(_password);
 
+            std::cout << "[DEBUG SQL] " << statement.toString() << std::endl; 
+
             statement.execute();
-
-            Poco::Data::Statement select(session);
-            select << "SELECT LAST_INSERT_ID()",
-                into(_id),
-                range(0, 1);
-
-            if (!select.done()){
-                select.execute();
-            }
+            std::cout << "New user entity created, id = " << _id << std::endl;
             session.commit();
-            
-            std::cout << "New entity id:" << _id << std::endl;
         } catch (Poco::Data::MySQL::ConnectionException &e) {
             session.rollback();
             std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
@@ -152,13 +216,16 @@ namespace database {
         try {
             Poco::Data::Statement statement(session);
 
-            statement << "update " << TABLE_NAME << " set name = ?, email = ? , login = ? , password = ?, deleted = ? where id = ?",
+            statement << "update " << TABLE_NAME << " set name = ?, email = ? , login = ? , password = ?, deleted = ? where id = ?"
+                << database::Database::sharding_hint(_id),
                 use(_name),
                 use(_email),
                 use(_login),
                 use(_password),
                 use(_deleted),
                 use(_id);
+
+            std::cout << "[DEBUG SQL] " << statement.toString() << std::endl; 
 
             statement.execute();
 
@@ -188,49 +255,47 @@ namespace database {
     std::vector<User> User::search(User likeUser) {
         try {
             Poco::Data::Session session = database::Database::get().create_session();
-            Poco::Data::Statement select(session);
             
             std::vector<User> result;
-            User user;
 
-            std::vector<std::string> conditions;
+            std::string sql = "select id, login, email, name, deleted from ";
+            sql += TABLE_NAME;
+            sql += " where deleted = false";
 
             if (likeUser.get_name().length() > 0) {
                 std::replace(likeUser.name().begin(), likeUser.name().end(), ' ', '%');
-                conditions.push_back("lower(name) like '%" + likeUser.get_name() + "%'");
+                sql += " and lower(name) like '%" + likeUser.get_name() + "%'";
             }
 
             if (likeUser.get_login().length() > 0) {
                 std::replace(likeUser.login().begin(), likeUser.login().end(), ' ', '%');
-                conditions.push_back("lower(login) like '%" + likeUser.get_login() + "%'");
+                sql += " and lower(login) like '%" + likeUser.get_login() + "%'";
             }
 
             if (likeUser.get_email().length() > 0) {
-                conditions.push_back("lower(email) like '%" + likeUser.get_email() + "%'");
+                sql += " and lower(email) like '%" + likeUser.get_email() + "%'";
             }
 
-            select << "select id, login, email, name, deleted from "  << TABLE_NAME << " where deleted = false",
-                into(user._id),
-                into(user._login),
-                into(user._email),
-                into(user._name),
-                into(user._deleted),
-                range(0, 1);
+            std::vector<std::string> shards = database::Database::get_all_hints();
+            for (const std::string &shard: shards) {
+                User user;
+                Poco::Data::Statement select(session);
+                select << sql << shard,
+                    into(user._id),
+                    into(user._login),
+                    into(user._email),
+                    into(user._name),
+                    into(user._deleted),
+                    range(0, 1);
 
-            if (conditions.size() > 0) {
-                std::string cond_str;
-                for (std::string cond: conditions) {
-                    cond_str += " and " + cond;
+                std::cout << "[DEBUG SQL] " << select.toString() << std::endl; 
+
+                while (!select.done()){
+                    if (select.execute())
+                        result.push_back(user);
                 }
-                std::cout << "Search condition: " << cond_str << std::endl;
-                
-                select << cond_str;
             }
-        
-            while (!select.done()){
-                if (select.execute())
-                    result.push_back(user);
-            }            
+            
             return result;
         } catch (Poco::Data::MySQL::ConnectionException &e) {
             std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
@@ -239,6 +304,32 @@ namespace database {
             std::cout << "statement:" << e.what() << " :: " << e.message() << std::endl;
             throw;
         }
+    }
+
+    void User::create_test_users() {
+        User user;
+        std::vector<User> users = search(user);
+        if (users.size() > 0) {
+            return;
+        }
+
+        std::cout << "Creating test users" << std::endl;
+
+        user.name() = "Autotest admin";
+        user.login() = "autotest_admin";
+        user.email() = "email@cool.com";
+        user.password() = "123";
+        user.insert_entity();
+        add_role(user.get_id(), "admin");
+
+        User user2;
+        user2.name() = "Autotest user";
+        user2.login() = "autotest_user";
+        user2.email() = "email@cool2.com";
+        user2.password() = "123";
+        user2.insert_entity();
+
+        std::cout << "Test users created" << std::endl;
     }
 
     Poco::JSON::Object::Ptr User::toJSON() const {

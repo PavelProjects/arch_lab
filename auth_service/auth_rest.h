@@ -269,6 +269,10 @@ class HTTPAuthWebServer : public Poco::Util::ServerApplication {
                 return Application::EXIT_DATAERR;
             }
 
+            if (std::getenv("CREATE_TEST_USERS") != nullptr) {
+                database::User::create_test_users();
+            }
+
             if (!_helpRequested) {
                 ServerSocket svs(Poco::Net::SocketAddress("0.0.0.0", atoi(portValue)));
                 HTTPServer srv(new HTTPAuthRequestFactory(DateTimeFormat::SORTABLE_FORMAT), svs, new HTTPServerParams);

@@ -44,7 +44,12 @@ namespace database {
             static User get_by_id(long id);
             static std::vector<User> search(User likeUser);
             static bool have_role(long user_id, std::string role_name);
+            static void add_role(long user_id, std::string role_name);
+            static void remove_role(long user_id, std::string role_name);
+            
             void save_to_db();
+
+            static void create_test_users();
     };
 }
 
