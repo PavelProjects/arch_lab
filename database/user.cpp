@@ -316,13 +316,6 @@ namespace database {
 
             std::cout << "Creating test users" << std::endl;
 
-            user.name() = "Autotest admin";
-            user.login() = "autotest_admin";
-            user.email() = "email@cool.com";
-            user.password() = "123";
-            user.insert_entity();
-            add_role(user.get_id(), "admin");
-
             std::vector<std::string> names = {"Autotest user", "Some Test User", "Another user", "Just test"};
             int i = 0;
             for (const std::string &name: names) {
@@ -334,6 +327,14 @@ namespace database {
                 user2.insert_entity();
                 i++;
             }
+             
+            User admin;
+            admin.name() = "Autotest admin";
+            admin.login() = "autotest_admin";
+            admin.email() = "email@cool.com";
+            admin.password() = "123";
+            admin.insert_entity();
+            add_role(admin.get_id(), "admin");
 
             std::cout << "Test users created" << std::endl;
         } catch (std::exception &e) {

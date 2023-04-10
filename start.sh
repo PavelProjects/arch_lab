@@ -17,5 +17,5 @@ export CREATE_TEST_USERS=1
 
 cd ./build
 make auth_service user_service
-./auth_service &
-./user_service &
+./auth_service 
+# ./user_service &
