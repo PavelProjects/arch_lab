@@ -18,7 +18,10 @@ System_Boundary(conference_site, "Сайт заказа услуг") {
    Container(auth_service, "Сервис регистрации и авторизации", "C++", "Сервис для создания и авторизации пользователей", $tags = "microService")
    Container(user_service, "Сервис пользователей", "C++", "Сервис управления, редактирования и получения информации о пользователях", $tags = "microService")    
    Container(product_service, "Сервис лотов услуг", "C++", "Сервис для создание/просмотра/редактирования предоставляемых услуг", $tags = "microService")
-   ContainerDb(db, "База данных", "MySQL", "Хранение данных о услугах и пользователях", $tags = "storage")
+   Container(proxysql, "proxysql", "Proxy")
+   ContainerDb(db1, "db_node_01", "MySQL", "Хранение данных о пользователях и лотах услуг", $tags = "storage")
+   ContainerDb(db2, "db_node_02", "MySQL", "Хранение данных о пользователях и лотах услуг", $tags = "storage")
+   ContainerDb(db3, "db_node_03", "MySQL", "Хранение данных о счетчиках", $tags = "storage")
 }
 
 Rel(admin, web_site, "Просмотр, редактирование, добавление и удаление информации о пользователях и услугах.")
@@ -26,13 +29,17 @@ Rel(moderator, web_site, "Просмотр и удаление предоста�
 Rel(user, web_site, "Регистрация, продажа или покупка услуг. Создание и редактирование своего лота, просмотр лотов других пользователей.")
 
 Rel(web_site, auth_service, "Регистрация/авторизация", "localhost/auth")
-Rel(auth_service, db, "INSERT/SELECT/UPDATE", "SQL")
+Rel(auth_service, proxysql, "INSERT/SELECT/UPDATE", "SQL")
 
 Rel(web_site, user_service, "Работа с пользователями", "localhost/user")
-Rel(user_service, db, "INSERT/SELECT/UPDATE", "SQL")
+Rel(user_service, proxysql, "INSERT/SELECT/UPDATE", "SQL")
 
 Rel(web_site, product_service, "Работа с услугами (создание, просмотр, редактирование)", "localhost/product")
-Rel(product_service, db, "INSERT/SELECT/UPDATE", "SQL")
+Rel(product_service, proxysql, "INSERT/SELECT/UPDATE", "SQL")
+
+Rel(proxysql, db1, "INSERT/SELECT/UPDATE")
+Rel(proxysql, db2, "INSERT/SELECT/UPDATE")
+Rel(proxysql, db3, "SELECT")
 
 Rel(user_service, auth_service, "Валидация токена")
 Rel(product_service, auth_service, "Валидация токена")
