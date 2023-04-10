@@ -93,8 +93,8 @@ services:
     # volumes:
     #   - proxysql-data:/var/lib/proxysql
     healthcheck:
-      test: "/usr/bin/mysql --user=stud --password=stud --execute \"SHOW DATABASES;\""
-      timeout: 20s
+      test: "/usr/bin/mysql --user=stud --password=stud --execute \"SHOW DATABASES -- sharding:0;\""
+      timeout: 5s
       retries: 5
     depends_on:
       - db_node_01
@@ -104,7 +104,7 @@ services:
       - arch-network
     ports:
       # Mysql Client Port
-      - "6033:6033"
+      - 6033:${DB_RPOXY_PORT}
       # Mysql Admin Port
       - "6032:6032"
 
@@ -115,18 +115,19 @@ services:
     container_name: auth_service
     environment:
       DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      DB_PORT: ${DB_RPOXY_PORT}
       DB_LOGIN: ${DB_LOGIN}
       DB_PASSWORD: ${DB_LOGIN}
       DB_DATABASE: ${DB_DATABASE}
       AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+      CREATE_TEST_USERS: 1
     ports:
       - ${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}
     networks:
       - arch-network
-    depends_on:
-      proxysql:
-        condition: service_healthy
+    # depends_on:
+    #   proxysql:
+    #     condition: service_healthy
 
   user_service:
     build:
@@ -135,7 +136,7 @@ services:
     container_name: user_service
     environment:
       DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      DB_PORT: ${DB_RPOXY_PORT}
       DB_LOGIN: ${DB_LOGIN}
       DB_PASSWORD: ${DB_LOGIN}
       DB_DATABASE: ${DB_DATABASE}
@@ -150,27 +151,27 @@ services:
       proxysql:
         condition: service_healthy
 
-  product_service:
-    build:
-      context: product_service
-      dockerfile: Dockerfile
-    container_name: product_service
-    environment:
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_LOGIN: ${DB_LOGIN}
-      DB_PASSWORD: ${DB_LOGIN}
-      DB_DATABASE: ${DB_DATABASE}
-      AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
-      AUTH_SERVICE_HOST: auth_service
-      PRODUCT_SERVICE_PORT: ${PRODUCT_SERVICE_PORT}
-    ports:
-      - ${PRODUCT_SERVICE_PORT}:${PRODUCT_SERVICE_PORT}
-    networks:
-      - arch-network
-    depends_on:
-      proxysql:
-        condition: service_healthy
+  # product_service:
+  #   build:
+  #     context: product_service
+  #     dockerfile: Dockerfile
+  #   container_name: product_service
+  #   environment:
+  #     DB_HOST: ${DB_HOST}
+  #     DB_PORT: ${DB_RPOXY_PORT}
+  #     DB_LOGIN: ${DB_LOGIN}
+  #     DB_PASSWORD: ${DB_LOGIN}
+  #     DB_DATABASE: ${DB_DATABASE}
+  #     AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+  #     AUTH_SERVICE_HOST: auth_service
+  #     PRODUCT_SERVICE_PORT: ${PRODUCT_SERVICE_PORT}
+  #   ports:
+  #     - ${PRODUCT_SERVICE_PORT}:${PRODUCT_SERVICE_PORT}
+  #   networks:
+  #     - arch-network
+  #   depends_on:
+  #     proxysql:
+  #       condition: service_healthy
 
 volumes:
   db-node-01-data:

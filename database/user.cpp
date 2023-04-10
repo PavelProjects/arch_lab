@@ -307,34 +307,38 @@ namespace database {
     }
 
     void User::create_test_users() {
-        User user;
-        std::vector<User> users = search(user);
-        if (users.size() > 0) {
-            return;
+        try {
+            User user;
+            std::vector<User> users = search(user);
+            if (users.size() > 0) {
+                return;
+            }
+
+            std::cout << "Creating test users" << std::endl;
+
+            user.name() = "Autotest admin";
+            user.login() = "autotest_admin";
+            user.email() = "email@cool.com";
+            user.password() = "123";
+            user.insert_entity();
+            add_role(user.get_id(), "admin");
+
+            std::vector<std::string> names = {"Autotest user", "Some Test User", "Another user", "Just test"};
+            int i = 0;
+            for (const std::string &name: names) {
+                User user2;
+                user2.name() = name;
+                user2.login() = "autotest_user" + std::to_string(i);
+                user2.email() = std::to_string(i) + "email@cool2.com";
+                user2.password() = "123";
+                user2.insert_entity();
+                i++;
+            }
+
+            std::cout << "Test users created" << std::endl;
+        } catch (std::exception &e) {
+            std::cout << "Failed to create test users: " << e.what() << std::endl;
         }
-
-        std::cout << "Creating test users" << std::endl;
-
-        user.name() = "Autotest admin";
-        user.login() = "autotest_admin";
-        user.email() = "email@cool.com";
-        user.password() = "123";
-        user.insert_entity();
-        add_role(user.get_id(), "admin");
-
-        std::vector<std::string> names = {"Autotest user", "Some Test User", "Another user", "Just test"};
-        int i = 0;
-        for (const std::string &name: names) {
-            User user2;
-            user2.name() = name;
-            user2.login() = "autotest_user" + std::to_string(i);
-            user2.email() = std::to_string(i) + "email@cool2.com";
-            user2.password() = "123";
-            user2.insert_entity();
-            i++;
-        }
-
-        std::cout << "Test users created" << std::endl;
     }
 
     Poco::JSON::Object::Ptr User::toJSON() const {
