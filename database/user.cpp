@@ -322,12 +322,17 @@ namespace database {
         user.insert_entity();
         add_role(user.get_id(), "admin");
 
-        User user2;
-        user2.name() = "Autotest user";
-        user2.login() = "autotest_user";
-        user2.email() = "email@cool2.com";
-        user2.password() = "123";
-        user2.insert_entity();
+        std::vector<std::string> names = {"Autotest user", "Some Test User", "Another user", "Just test"};
+        int i = 0;
+        for (const std::string &name: names) {
+            User user2;
+            user2.name() = name;
+            user2.login() = "autotest_user" + std::to_string(i);
+            user2.email() = std::to_string(i) + "email@cool2.com";
+            user2.password() = "123";
+            user2.insert_entity();
+            i++;
+        }
 
         std::cout << "Test users created" << std::endl;
     }

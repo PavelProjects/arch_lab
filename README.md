@@ -34,13 +34,16 @@ docker compose up
 <b>!!!ВНИМАНИЕ!!!</b>
 
 Новый пользователь не будет иметь прав админа и сможет удалять только свои записи.
-Созданные для тестов юзеры (autotes1, autotest2) имеют права админов и могут удалять любые сущности.
+Созданные для тестов юзеры (autotest_admin, autotest_user0, autotest_user1, autotest_user2, autotest_user3) имеют права админов и могут удалять любые сущности.
 
 # Api
 Конфигурация ендпоинтов описана в ./docs/index.yaml.
 
 Для авторизации можно использовать тестовых пользователей:
 - autotest_admin / 123
-- autotest_user / 123
+- autotest_user0 / 123
+- autotest_user1 / 123
+- autotest_user2 / 123
+- autotest_user3 / 123
 
 Или же создать своего.

@@ -110,7 +110,7 @@ services:
 
   auth_service:
     build:
-      context: ../auth_service
+      context: auth_service
       dockerfile: Dockerfile
     container_name: auth_service
     environment:
@@ -130,7 +130,7 @@ services:
 
   user_service:
     build:
-      context: ../user_service
+      context: user_service
       dockerfile: Dockerfile
     container_name: user_service
     environment:
@@ -152,7 +152,7 @@ services:
 
   product_service:
     build:
-      context: ../product_service
+      context: product_service
       dockerfile: Dockerfile
     container_name: product_service
     environment:
