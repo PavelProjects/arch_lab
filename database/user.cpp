@@ -255,7 +255,7 @@ namespace database {
     std::vector<User> User::search(User likeUser) {
         try {
             Poco::Data::Session session = database::Database::get().create_session();
-            
+            std::cout << "Session created" << std::endl;
             std::vector<User> result;
 
             std::string sql = "select id, login, email, name, deleted from ";
@@ -275,7 +275,9 @@ namespace database {
             if (likeUser.get_email().length() > 0) {
                 sql += " and lower(email) like '%" + likeUser.get_email() + "%'";
             }
+            std::cout << "Total shards " << database::Database::get_max_shard() << std::endl;
 
+            std::cout << "Collecting shards" << std::endl;
             std::vector<std::string> shards = database::Database::get_all_hints();
             for (const std::string &shard: shards) {
                 User user;
