@@ -262,19 +262,19 @@ namespace database {
             sql += TABLE_NAME;
             sql += " where deleted = false";
 
-            if (likeUser.get_name().length() > 0) {
-                std::replace(likeUser.name().begin(), likeUser.name().end(), ' ', '%');
-                sql += " and lower(name) like '%" + likeUser.get_name() + "%'";
-            }
+            // if (likeUser.get_name().length() > 0) {
+            //     std::replace(likeUser.name().begin(), likeUser.name().end(), ' ', '%');
+            //     sql += " and lower(name) like '%" + likeUser.get_name() + "%'";
+            // }
 
-            if (likeUser.get_login().length() > 0) {
-                std::replace(likeUser.login().begin(), likeUser.login().end(), ' ', '%');
-                sql += " and lower(login) like '%" + likeUser.get_login() + "%'";
-            }
+            // if (likeUser.get_login().length() > 0) {
+            //     std::replace(likeUser.login().begin(), likeUser.login().end(), ' ', '%');
+            //     sql += " and lower(login) like '%" + likeUser.get_login() + "%'";
+            // }
 
-            if (likeUser.get_email().length() > 0) {
-                sql += " and lower(email) like '%" + likeUser.get_email() + "%'";
-            }
+            // if (likeUser.get_email().length() > 0) {
+            //     sql += " and lower(email) like '%" + likeUser.get_email() + "%'";
+            // }
             std::cout << "Total shards " << database::Database::get_max_shard() << std::endl;
 
             std::cout << "Collecting shards" << std::endl;
