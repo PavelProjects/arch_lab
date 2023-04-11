@@ -254,6 +254,7 @@ namespace database {
 
     std::vector<User> User::search(User likeUser) {
         try {
+            likeUser.get_id();
             Poco::Data::Session session = database::Database::get().create_session();
             std::cout << "Session created" << std::endl;
             std::vector<User> result;
