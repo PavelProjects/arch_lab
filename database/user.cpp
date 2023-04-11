@@ -254,32 +254,33 @@ namespace database {
 
     std::vector<User> User::search(User likeUser) {
         try {
-            likeUser.get_id();
             Poco::Data::Session session = database::Database::get().create_session();
             std::cout << "Session created" << std::endl;
             std::vector<User> result;
-
-            std::string sql = "select id, login, email, name, deleted from ";
-            sql += TABLE_NAME;
-            sql += " where deleted = false";
-
-            // if (likeUser.get_name().length() > 0) {
-            //     std::replace(likeUser.name().begin(), likeUser.name().end(), ' ', '%');
-            //     sql += " and lower(name) like '%" + likeUser.get_name() + "%'";
-            // }
-
-            // if (likeUser.get_login().length() > 0) {
-            //     std::replace(likeUser.login().begin(), likeUser.login().end(), ' ', '%');
-            //     sql += " and lower(login) like '%" + likeUser.get_login() + "%'";
-            // }
-
-            // if (likeUser.get_email().length() > 0) {
-            //     sql += " and lower(email) like '%" + likeUser.get_email() + "%'";
-            // }
             std::cout << "Total shards " << database::Database::get_max_shard() << std::endl;
 
             std::cout << "Collecting shards" << std::endl;
             std::vector<std::string> shards = database::Database::get_all_hints();
+
+            std::cout << "Building sql " << std::endl;
+            std::string sql = "select id, login, email, name, deleted from ";
+            sql += TABLE_NAME;
+            sql += " where deleted = false";
+
+            if (likeUser.get_name().length() > 0) {
+                std::replace(likeUser.name().begin(), likeUser.name().end(), ' ', '%');
+                sql += " and lower(name) like '%" + likeUser.get_name() + "%'";
+            }
+
+            if (likeUser.get_login().length() > 0) {
+                std::replace(likeUser.login().begin(), likeUser.login().end(), ' ', '%');
+                sql += " and lower(login) like '%" + likeUser.get_login() + "%'";
+            }
+
+            if (likeUser.get_email().length() > 0) {
+                sql += " and lower(email) like '%" + likeUser.get_email() + "%'";
+            }
+
             for (const std::string &shard: shards) {
                 User user;
                 Poco::Data::Statement select(session);
