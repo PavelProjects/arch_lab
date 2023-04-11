@@ -84,6 +84,11 @@ namespace database {
         }
     }
     void User::add_role(long user_id, std::string role) {
+        if (have_role(user_id, role)) {
+            std::cout << "User " << user_id << " already have role " << role << std::endl;
+            return;
+        }
+
         Poco::Data::Session session = database::Database::get().create_session();
         session.begin();
         try {
@@ -169,15 +174,20 @@ namespace database {
         }
     }
 
-    void User::save_to_db() {
+    bool User::save_to_db() {
         if (_id > 0) {
-            update_entity();
+            return update_entity();
         } else {
-            insert_entity();
+            return insert_entity();
         }
     }   
 
-    void User::insert_entity() {
+    bool User::insert_entity() {
+        if (is_exist()) {
+            std::cout << "User already exist" << std::endl;
+            return false;
+        }
+
         _id = database::Database::generate_new_id();
 
         Poco::Data::Session session = database::Database::get().create_session();
@@ -197,8 +207,9 @@ namespace database {
             std::cout << "[DEBUG SQL] " << statement.toString() << std::endl; 
 
             statement.execute();
-            std::cout << "New user entity created, id = " << _id << std::endl;
             session.commit();
+            std::cout << "New user entity created, id = " << _id << std::endl;
+            return true;
         } catch (Poco::Data::MySQL::ConnectionException &e) {
             session.rollback();
             std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
@@ -210,7 +221,7 @@ namespace database {
         }
     }
 
-    void User::update_entity() {
+    bool User::update_entity() {
         Poco::Data::Session session = database::Database::get().create_session();
         session.begin();
         try {
@@ -241,6 +252,7 @@ namespace database {
             session.commit();
 
             std::cout << "Updated:" << updated << std::endl;
+            return true;
         } catch (Poco::Data::MySQL::ConnectionException &e) {
             session.rollback();
             std::cout << "connection:" << e.what() << " :: " << e.message() << std::endl;
@@ -306,35 +318,64 @@ namespace database {
         }
     }
 
+    bool User::is_exist() {
+        try {
+            std::cout << "Checking existence of user " << _login << " :: " << _email << std::endl;
+            Poco::Data::Session session = database::Database::get().create_session();
+            bool result = false;
+
+            std::vector<std::string> shards = database::Database::get_all_hints();
+            for (const std::string &shard: shards) {
+                Poco::Data::Statement select(session);
+                select << "select true from "  << TABLE_NAME 
+                    << " where login = ? or email = ?" << shard,
+                    into(result),
+                    use(_login),
+                    use(_email),
+                    range(0, 1);
+
+                std::cout << "[DEBUG SQL] " << select.toString() << std::endl; 
+            
+                select.execute();
+                Poco::Data::RecordSet rs(select);
+                if (rs.moveFirst())
+                    return result;
+            }
+            return result;
+        } catch (Poco::Data::MySQL::ConnectionException &e) {
+            std::cout << "connection:" << e.what() << std::endl;
+            throw;
+        } catch (Poco::Data::MySQL::StatementException &e) {
+            std::cout << "statement:" << e.what() << std::endl;
+            throw;
+        }
+    }
+
     void User::create_test_users() {
         try {
-            User user;
-            std::vector<User> users = search(user);
-            if (users.size() > 0) {
-                return;
-            }
-
             std::cout << "Creating test users" << std::endl;
 
-            std::vector<std::string> names = {"Autotest user", "Some Test User", "Another user", "Just test"};
-            int i = 0;
-            for (const std::string &name: names) {
-                User user2;
-                user2.name() = name;
-                user2.login() = "autotest_user" + std::to_string(i);
-                user2.email() = std::to_string(i) + "email@cool2.com";
-                user2.password() = "123";
-                user2.insert_entity();
-                i++;
-            }
+            // todo fix creation
+            // std::vector<std::string> names = {"Autotest user", "Some Test User", "Another user", "Just test"};
+            // int i = 0;
+            // for (const std::string &name: names) {
+            //     User user;
+            //     user.name() = name;
+            //     user.login() = "autotest_user" + std::to_string(i);
+            //     user.email() = std::to_string(i) + "email@cool2.com";
+            //     user.password() = "123";
+            //     user.insert_entity();
+            //     i++;
+            // }
              
             User admin;
             admin.name() = "Autotest admin";
             admin.login() = "autotest_admin";
             admin.email() = "email@cool.com";
             admin.password() = "123";
-            admin.insert_entity();
-            add_role(admin.get_id(), "admin");
+            if (admin.insert_entity()) {
+                add_role(admin.get_id(), "admin");
+            }
 
             std::cout << "Test users created" << std::endl;
         } catch (std::exception &e) {

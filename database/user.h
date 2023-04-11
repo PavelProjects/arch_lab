@@ -15,8 +15,9 @@ namespace database {
             std::string _password;
             bool _deleted;
 
-            void insert_entity();
-            void update_entity();
+            bool insert_entity();
+            bool update_entity();
+            bool is_exist();
         public:
             static User fromJson(const std::string &json);
             Poco::JSON::Object::Ptr toJSON() const;
@@ -47,7 +48,7 @@ namespace database {
             static void add_role(long user_id, std::string role_name);
             static void remove_role(long user_id, std::string role_name);
             
-            void save_to_db();
+            bool save_to_db();
 
             static void create_test_users();
     };

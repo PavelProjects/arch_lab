@@ -82,6 +82,7 @@ namespace database{
                 into(id),
                 range(0, 1);
 
+            std::cout << "[DEBUG SQL] " << select.toString() << std::endl; 
             if (!select.done()){
                 select.execute();
             }

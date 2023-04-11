@@ -26,7 +26,7 @@ services:
       retries: 5
     volumes:
       - ./mariadb/rollout/user:/docker-entrypoint-initdb.d
-      # - db-node-01-data:/var/lib/mysql
+      - db-node-01-data:/var/lib/mysql
 
   db_node_02:
     build:
@@ -53,7 +53,7 @@ services:
       retries: 5
     volumes:
       - ./mariadb/rollout/user:/docker-entrypoint-initdb.d
-      # - db-node-02-data:/var/lib/mysql
+      - db-node-02-data:/var/lib/mysql
 
 # sequences
   db_node_03:
@@ -81,7 +81,7 @@ services:
       retries: 5
     volumes:
       - ./mariadb/rollout/sequence:/docker-entrypoint-initdb.d
-      # - db-node-03-data:/var/lib/mysql
+      - db-node-03-data:/var/lib/mysql
 
   proxysql:
     build:
