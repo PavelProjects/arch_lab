@@ -132,23 +132,32 @@ class UserRequestHandler : public HTTPRequestHandler {
                     response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                     response.setChunkedTransferEncoding(true);
                     response.send();
-                } else if (hasSubstr(request.getURI(), "/search") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
+                } else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_GET) {
                     const Poco::URI uri(request.getURI());
                     const Poco::URI::QueryParameters params = uri.getQueryParameters();
 
-                    std::vector<database::User> result = search(params);
-                    std::cout << "Found total " << result.size() << std::endl;
+                    if (hasSubstr(request.getURI(), "/search")) {
+                        std::vector<database::User> result = search(params);
+                        std::cout << "Found total " << result.size() << std::endl;
 
-                    Poco::JSON::Array arr;
-                    for (database::User user: result) {
-                        // without toJson don't work, dunno why
-                        arr.add(user.toJSON());
+                        Poco::JSON::Array arr;
+                        for (database::User user: result) {
+                            // without toJson don't work, dunno why
+                            arr.add(user.toJSON());
+                        }
+                        response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                        response.setChunkedTransferEncoding(true);
+                        response.setContentType("application/json");
+                        std::ostream &ostr = response.send();
+                        Poco::JSON::Stringifier::stringify(arr, ostr);
+                    } else {
+                        database::User user = get_by_id(params);
+                        response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                        response.setChunkedTransferEncoding(true);
+                        response.setContentType("application/json");
+                        std::ostream &ostr = response.send();
+                        Poco::JSON::Stringifier::stringify(user.toJSON(), ostr);
                     }
-                    response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                    response.setChunkedTransferEncoding(true);
-                    response.setContentType("application/json");
-                    std::ostream &ostr = response.send();
-                    Poco::JSON::Stringifier::stringify(arr, ostr);
                 } if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_DELETE) {
                     const Poco::URI uri(request.getURI());
                     const Poco::URI::QueryParameters params = uri.getQueryParameters();
