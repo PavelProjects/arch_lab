@@ -291,13 +291,83 @@ namespace database {
         }
     }
 
-    // TODO search cache
+    std::string User::build_search_cache_key(User &like_user) {
+        std::string key;
+        if (!like_user.get_login().empty()) {
+            key.append(like_user.get_login());
+        }
+        if (!like_user.get_email().empty()) {
+            key.append(like_user.get_email());
+        }
+        if (!like_user.get_name().empty()) {
+            key.append(like_user.get_name());
+        }
+        
+        if (key.empty()) {
+            key = "full";
+        }
+        return key;
+    }
+
+    // не идеальная реализация
+    // По нормальному надо бы сразу строку возвращать, тк делается бесполезная работа
+    // Но опять же, сделано в учебных целях, хотел понять, как его можно туда обратно гонять
+    // И на сколько это будет долго
+    bool User::search_by_cache(User &like_user, std::vector<User> &search_results) {
+        // Формируем ключ для поиска
+        std::string key = build_search_cache_key(like_user);
+        try {
+            std::cout << "Getting search results by key " << key << std::endl;
+            std::string result_cache;
+            if (database::Cache::get().get(key, result_cache)) {
+                if (result_cache.empty()) {
+                    return false;
+                }
+                Poco::JSON::Parser parser;
+                Poco::Dynamic::Var result = parser.parse(result_cache);
+                Poco::JSON::Array::Ptr array = result.extract<Poco::JSON::Array::Ptr>();
+                for (int i = 0; i < (int) array->size(); i++) {
+                    User user = from_json_object(array->getObject(i));
+                    search_results.push_back(user);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } catch (std::exception &e) {
+            std::cerr << "Failed to get search results from cache: " << e.what() << std::endl;
+            return false;
+        }
+    }
+
+    void User::save_search_to_cache(User &like_user, std::vector<User> &search_results) {
+        std::string key = build_search_cache_key(like_user);
+
+        try {
+            Poco::JSON::Array arr;
+            for (database::User user: search_results) {
+                arr.add(user.toJSON());
+            }
+            std::stringstream ss;
+            Poco::JSON::Stringifier::stringify(arr, ss);
+            std::string result = ss.str();
+            std::cout << "Saving search results by key " << key << std::endl;
+            database::Cache::get().put(key, result);
+        } catch (std::exception &e) {
+            std::cerr << "Failed to save search results to cache: " << e.what() << std::endl;
+        }
+    }
+
     std::vector<User> User::search(User likeUser) {
+        // сначала пытаемся искать в кеше
+        std::vector<User> result;
+        if (search_by_cache(likeUser, result)) {
+            std::cout << "Get search from cache!" << std::endl;
+            return result;
+        }
+
         try {
             Poco::Data::Session session = database::Database::get().create_session();
-            
-            std::vector<User> result;
-
             std::string sql = "select id, login, email, name, deleted from ";
             sql += TABLE_NAME;
             sql += " where deleted = false";
@@ -335,6 +405,8 @@ namespace database {
                         result.push_back(user);
                 }
             }
+
+            save_search_to_cache(likeUser, result);
             
             return result;
         } catch (Poco::Data::MySQL::ConnectionException &e) {
@@ -407,9 +479,9 @@ namespace database {
         try {
             std::stringstream ss;
             Poco::JSON::Stringifier::stringify(toJSONWithPassword(), ss);
-            std::string message = ss.str();
-            database::Cache::get().put(std::to_string(_id), message);
-            database::Cache::get().put(_login, message);
+            std::string obj = ss.str();
+            database::Cache::get().put(std::to_string(_id), obj);
+            database::Cache::get().put(_login, obj);
         } catch (std::exception &e) {
             std::cerr << "Failed to save user to cache: " << e.what() << std::endl;
         }
@@ -474,20 +546,22 @@ namespace database {
         return defaultValue;
     }
 
-    User User::fromJson(const std::string &str) {
+    User User::from_json_object(Poco::JSON::Object::Ptr object) {
         User user;
-        Poco::JSON::Parser parser;
-        Poco::Dynamic::Var result = parser.parse(str);
-        Poco::JSON::Object::Ptr object = result.extract<Poco::JSON::Object::Ptr>();
-        
         user.id() = getOrDefault<long>(object, "id", 0);
         user.name() = getOrDefault<std::string>(object, "name", "");
         user.email() = getOrDefault<std::string>(object, "email", "");
         user.login() = getOrDefault<std::string>(object, "login", "");
         user.password() = getOrDefault<std::string>(object, "password", "");
         user.deleted() = getOrDefault<bool>(object, "deleted", false);
-
         return user;
+    }
+
+    User User::fromJson(const std::string &str) {
+        Poco::JSON::Parser parser;
+        Poco::Dynamic::Var result = parser.parse(str);
+        Poco::JSON::Object::Ptr object = result.extract<Poco::JSON::Object::Ptr>();
+        return from_json_object(object);
     }
 
     const std::string &User::get_login() const {
