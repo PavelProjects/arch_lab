@@ -18,6 +18,17 @@ namespace database {
             bool insert_entity();
             bool update_entity();
             bool is_exist();
+
+            void save_to_cache();
+            static User get_from_cache_by_id(long id);
+            static User get_from_cache_by_login(std::string login);
+            static bool search_by_cache(User &likeUser, std::vector<User> &search_results);
+            static void save_search_to_cache(User &like_user, std::vector<User> &search_results);
+            static std::string build_search_cache_key(User &like_user);
+
+            static User from_json_object(Poco::JSON::Object::Ptr);
+
+            Poco::JSON::Object::Ptr toJSONWithPassword() const;
         public:
             static User fromJson(const std::string &json);
             Poco::JSON::Object::Ptr toJSON() const;

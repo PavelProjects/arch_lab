@@ -11,6 +11,8 @@ class  Config{
         std::string _login;
         std::string _password;
         std::string _database;
+        std::string _cache_host;
+        std::string _cache_port;
 
     public:
         static Config& get();
@@ -21,11 +23,13 @@ class  Config{
         std::string& password();
         std::string& database();
 
-        const std::string& get_port() const ;
-        const std::string& get_host() const ;
-        const std::string& get_login() const ;
-        const std::string& get_password() const ;
-        const std::string& get_database() const ;
+        const std::string& get_port() const;
+        const std::string& get_host() const;
+        const std::string& get_login() const;
+        const std::string& get_password() const;
+        const std::string& get_database() const;
+        const std::string& get_cache_host() const;
+        const std::string& get_cache_port() const;
 };
 
 #endif

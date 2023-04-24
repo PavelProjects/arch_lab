@@ -56,6 +56,20 @@ std::vector<database::User> search(std::vector<std::pair<std::string, std::strin
     return database::User::search(likeUser);
 }
 
+database::User get_by_id(std::vector<std::pair<std::string, std::string>> params) {
+    long id = -1;
+    for(std::pair<std::string, std::string> key_value: params) {
+        if (key_value.first == "id" && !key_value.second.empty()) {
+            id = atoi(key_value.second.c_str());
+        }
+    }
+
+    if (id < 1) {
+        throw validation_exception("Id param is missing!");
+    }
+    return database::User::get_by_id(id);
+}
+
 void delete_user(long user_id, std::vector<std::pair<std::string, std::string>> params) {
     long delete_user_id = -1;
 

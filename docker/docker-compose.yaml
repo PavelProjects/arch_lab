@@ -145,6 +145,8 @@ services:
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       MAX_SHARD: 1
       SEQUENCE_SHARD: 2
+      CACHE_HOST: cache
+      CACHE_PORT: ${CACHE_PORT}
     ports:
       - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
     networks:
@@ -152,6 +154,17 @@ services:
     depends_on:
       proxysql:
         condition: service_healthy
+
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning 
+    networks:
+      - arch-network
+    volumes: 
+      - cache:/data
 
   # product_service:
   #   build:
@@ -180,6 +193,7 @@ volumes:
   db-node-02-data:
   db-node-03-data:
   proxysql-data:
+  cache:
 
 networks:
   arch-network:
