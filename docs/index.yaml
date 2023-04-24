@@ -71,6 +71,23 @@ paths:
   /user:
     servers: 
       - url: http://localhost:8082/
+    get:
+      summary: Get user by id
+      parameters:
+        - name: id
+          description: User id
+          in: query
+          schema:
+            $ref: '#/components/schemas/user_id'
+      responses:
+        200:
+          $ref: '#/components/schemas/user'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        500:
+          $ref: '#/components/responses/InternalServerException'
+      security:
+        - bearerAuth: []
     put:
       summary: Edit user
       requestBody:

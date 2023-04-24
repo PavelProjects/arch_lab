@@ -1,0 +1,112 @@
+Script: ./cache_test.lua, threads: 1, connections: 1
+Running 10s test @ http://localhost:8082/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.04ms  287.74us   8.37ms   93.67%
+    Req/Sec     0.96k    75.55     1.07k    77.00%
+  Latency Distribution
+     50%    0.99ms
+     75%    1.03ms
+     90%    1.14ms
+     99%    2.11ms
+  9567 requests in 10.00s, 3.38MB read
+Requests/sec:    956.30
+Transfer/sec:    345.57KB
+Script: ./cache_test.lua, threads: 2, connections: 2
+Running 10s test @ http://localhost:8082/
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.01ms  196.56us   9.95ms   98.23%
+    Req/Sec     0.99k    34.89     1.03k    81.50%
+  Latency Distribution
+     50%    0.98ms
+     75%    1.02ms
+     90%    1.07ms
+     99%    1.29ms
+  19747 requests in 10.00s, 6.97MB read
+Requests/sec:   1974.57
+Transfer/sec:    713.50KB
+Script: ./cache_test.lua, threads: 5, connections: 5
+Running 10s test @ http://localhost:8082/
+  5 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.38ms  391.86us  13.86ms   96.52%
+    Req/Sec   727.81     34.91   780.00     79.60%
+  Latency Distribution
+     50%    1.32ms
+     75%    1.43ms
+     90%    1.56ms
+     99%    2.65ms
+  36227 requests in 10.01s, 12.78MB read
+Requests/sec:   3620.65
+Transfer/sec:      1.28MB
+Script: ./cache_test.lua, threads: 10, connections: 10
+Running 10s test @ http://localhost:8082/
+  10 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.10ms    1.55ms  42.22ms   98.39%
+    Req/Sec   496.15     28.00   560.00     80.80%
+  Latency Distribution
+     50%    1.92ms
+     75%    2.18ms
+     90%    2.51ms
+     99%    4.71ms
+  49408 requests in 10.01s, 17.43MB read
+Requests/sec:   4937.61
+Transfer/sec:      1.74MB
+Script: ./cache_test_search.lua, threads: 1, connections: 1
+Running 10s test @ http://localhost:8082/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.33ms  279.34us   8.80ms   96.78%
+    Req/Sec   750.34     38.80   818.00     79.00%
+  Latency Distribution
+     50%    1.30ms
+     75%    1.36ms
+     90%    1.44ms
+     99%    2.04ms
+  7472 requests in 10.00s, 2.24MB read
+Requests/sec:    746.98
+Transfer/sec:    229.78KB
+Script: ./cache_test_search.lua, threads: 2, connections: 2
+Running 10s test @ http://localhost:8082/
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.32ms  167.32us   6.19ms   93.43%
+    Req/Sec   752.15     32.16   797.00     79.00%
+  Latency Distribution
+     50%    1.29ms
+     75%    1.35ms
+     90%    1.44ms
+     99%    1.86ms
+  14975 requests in 10.00s, 4.50MB read
+Requests/sec:   1496.87
+Transfer/sec:    460.46KB
+Script: ./cache_test_search.lua, threads: 5, connections: 5
+Running 10s test @ http://localhost:8082/
+  5 threads and 5 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.82ms  551.44us  15.06ms   96.05%
+    Req/Sec   554.65     25.88   616.00     75.20%
+  Latency Distribution
+     50%    1.73ms
+     75%    1.87ms
+     90%    2.06ms
+     99%    4.07ms
+  27629 requests in 10.01s, 8.30MB read
+Requests/sec:   2760.20
+Transfer/sec:    849.12KB
+Script: ./cache_test_search.lua, threads: 10, connections: 10
+Running 10s test @ http://localhost:8082/
+  10 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.73ms    0.90ms  22.33ms   90.78%
+    Req/Sec   370.36     24.54   430.00     72.20%
+  Latency Distribution
+     50%    2.55ms
+     75%    2.93ms
+     90%    3.43ms
+     99%    6.38ms
+  36908 requests in 10.01s, 11.09MB read
+Requests/sec:   3686.06
+Transfer/sec:      1.11MB
