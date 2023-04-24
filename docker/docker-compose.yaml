@@ -145,8 +145,8 @@ services:
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       MAX_SHARD: 1
       SEQUENCE_SHARD: 2
-      CACHE_HOST: cache
-      CACHE_PORT: ${CACHE_PORT}
+      # CACHE_HOST: cache
+      # CACHE_PORT: ${CACHE_PORT}
     ports:
       - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
     networks:
