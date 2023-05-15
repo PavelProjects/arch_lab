@@ -9,7 +9,8 @@
 #include "../utils/validation_utils.h"
 #include "../utils/token_utils.h"
 #include "../service_excpetion/service_exceptions.h"
-
+#include "../user_service/user_service.h"
+#include "../config/config.h"
 
 std::string auth_user(std::string info) {
     std::string login;
@@ -53,8 +54,10 @@ long create_user(std::string body) {
 
     if (validate_user(user, validation_message)) {
         std::cout << "Creating new user: " << body << std::endl;
-        user.save_to_db();
-        return user.get_id();
+        send_to_queue(user);
+        return 0;
+        // user.save_to_db();
+        // return user.get_id();
     } else {
         throw validation_exception(validation_message);
     }

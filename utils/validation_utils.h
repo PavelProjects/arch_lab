@@ -1,3 +1,6 @@
+#ifndef VALIDATION_UTILS_H
+#define VALIDATION_UTILS_H
+
 #include <string>
 #include "Poco/Net/HTMLForm.h"
 #include "../database/user.h"
@@ -58,3 +61,5 @@ bool validate_user(database::User &user, std::string &message) {
 
     return result;
 };
+
+#endif

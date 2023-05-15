@@ -18,6 +18,11 @@ export SEQUENCE_SHARD=2
 
 export CREATE_TEST_USERS=1
 
+
+export QUEUE_HOST=192.168.0.112:9092
+export QUEUE_TOPIC=event_server
+export QUEUE_GROUP_ID=0
+
 cd ./build
 make user_service
 ./user_service
