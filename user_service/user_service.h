@@ -1,10 +1,52 @@
 #include "Poco/JSON/Object.h"
 #include "Poco/JSON/Array.h"
+#include <cppkafka/cppkafka.h>
 
 #include "../database/user.h"
 #include "../utils/request_utils.h"
 #include "../utils/validation_utils.h"
 #include "../service_excpetion/service_exceptions.h"
+#include "../config/config.h"
+
+#define SEND_ATTEMPTS 10
+#define QUEUE_EVENT_CREATE "create_event" 
+#define QUEUE_EVENT_UPDATE "update_event" 
+
+bool send_to_queue(database::User &user) {
+    static cppkafka::Configuration config ={
+        {"metadata.broker.list", Config::get().get_queue_host()},
+        {"acks","all"}};
+    static cppkafka::Producer producer(config);
+    static std::mutex mtx;
+    static int message_key{0};
+    using Hdr = cppkafka::MessageBuilder::HeaderType;
+    
+    std::lock_guard<std::mutex> lock(mtx);
+    std::stringstream ss;
+    Poco::JSON::Stringifier::stringify(user.toJSON(), ss);
+    std::string message = ss.str();
+    std::string event_type = user.get_id() > 0 ? QUEUE_EVENT_UPDATE : QUEUE_EVENT_CREATE;
+    bool not_sent = true;
+    int attempts = 0;
+
+    cppkafka::MessageBuilder builder(Config::get().get_queue_topic());
+    std::string mk=std::to_string(++message_key);
+    builder.key(mk);
+    builder.header(Hdr{"event_type", event_type});
+    builder.payload(message);
+
+    while (not_sent && attempts < SEND_ATTEMPTS) {
+        try {
+            producer.produce(builder);
+            not_sent = false;
+            std::cout << "[QUEUE] " << "Sended to queue message id:" << mk << " user:" << user.get_login() << " event:" << event_type << std::endl;
+        } catch (std::exception &ex) {
+            attempts++;
+            std::cout << "[QUEUE] " << "Failed to send to queue: " << ex.what() << std::endl;
+        }
+    }
+    return attempts < SEND_ATTEMPTS;
+}
 
 void edit_user(long user_id, std::string body) {
     Poco::JSON::Object::Ptr obj = parseJson(body);
@@ -34,7 +76,8 @@ void edit_user(long user_id, std::string body) {
         throw validation_exception(validation_message);
     }
 
-    user.save_to_db();
+    send_to_queue(user);
+    // user.save_to_db();
 }
 
 std::vector<database::User> search(std::vector<std::pair<std::string, std::string>> params) {

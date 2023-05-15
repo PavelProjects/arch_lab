@@ -267,6 +267,7 @@ class HTTPUserWebServer : public Poco::Util::ServerApplication {
                 HTTPServer srv(new HTTPUserRequestFactory(DateTimeFormat::SORTABLE_FORMAT), svs, new HTTPServerParams);
                 srv.start();
                 std::cout << "user server started on port " << portValue << std::endl;
+                Config::get();
                 waitForTerminationRequest();
                 srv.stop();
                 std::cout << "user server stoped" << std::endl;
