@@ -118,7 +118,7 @@ services:
       KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka1:9092"
       KAFKA_BROKER_ID: 1
       KAFKA_CFG_NODE_ID: 1
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093"
       ALLOW_PLAINTEXT_LISTENER: "yes"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_KRAFT_CLUSTER_ID: "dh6khitPSDGZSBOjNeTC_g"
@@ -126,18 +126,14 @@ services:
       - kafka_volume1:/bitnami/kafka
     networks:
       - arch-network
-    ports:
-      - "2181:2181"
-      - "9092:9092"
-      - "9093:9093"
+    healthcheck:
+    # хака, не получилось сделать нормальный healthcheck
+      test: "ls" 
+      start_period: 10s
   
   kafka2:
     image: 'bitnami/kafka:latest'
     container_name: kafka2
-    # ports:
-    #   - "2181:2181"
-    #   - "9092:9092"
-    #   - "9093:9093"
     environment:
       KAFKA_ENABLE_KRAFT: "yes"
       KAFKA_CFG_PROCESS_ROLES: "broker,controller"
@@ -155,16 +151,9 @@ services:
       - kafka_volume2:/bitnami/kafka
     networks:
       - arch-network
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:v0.4.0
-    ports:
-      - "8888:8080"
-    environment:
-      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: "kafka1:9093,kafka2:9093"
-      KAFKA_CLUSTERS_0_NAME: "kraft"
-    networks:
-      - arch-network
+    healthcheck:
+      test: "ls"
+      start_period: 10s
 
   auth_service:
     build:
@@ -190,6 +179,10 @@ services:
       - arch-network
     depends_on:
       proxysql:
+        condition: service_healthy
+      kafka1:
+        condition: service_healthy
+      kafka2:
         condition: service_healthy
 
   user_service:
@@ -219,6 +212,38 @@ services:
       - arch-network
     depends_on:
       proxysql:
+        condition: service_healthy
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+
+  event_listener:
+    build:
+      context: event_listener
+      dockerfile: Dockerfile
+    container_name: event_listener
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_RPOXY_PORT}
+      DB_LOGIN: ${DB_LOGIN}
+      DB_PASSWORD: ${DB_LOGIN}
+      DB_DATABASE: ${DB_DATABASE}
+      MAX_SHARD: 1
+      SEQUENCE_SHARD: 2
+      QUEUE_HOST: kafka1:9092
+      QUEUE_TOPIC: event_server
+      QUEUE_GROUP_ID: 0
+      CACHE_HOST: cache
+      CACHE_PORT: ${CACHE_PORT}
+    networks:
+      - arch-network
+    depends_on:
+      proxysql:
+        condition: service_healthy
+      kafka1:
+        condition: service_healthy
+      kafka2:
         condition: service_healthy
 
   cache:
@@ -253,6 +278,15 @@ services:
   #   depends_on:
   #     proxysql:
   #       condition: service_healthy
+  # kafka-ui:
+  #   image: provectuslabs/kafka-ui:v0.4.0
+  #   ports:
+  #     - "8888:8080"
+  #   environment:
+  #     KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: "kafka1:9093,kafka2:9093"
+  #     KAFKA_CLUSTERS_0_NAME: "kraft"
+  #   networks:
+  #     - arch-network
 
 volumes:
   db-node-01-data:

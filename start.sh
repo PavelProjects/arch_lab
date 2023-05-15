@@ -24,5 +24,7 @@ export QUEUE_TOPIC=event_server
 export QUEUE_GROUP_ID=0
 
 cd ./build
-make user_service
-./user_service
+# make user_service
+# ./user_service
+make event_listener
+./event_listener
